@@ -50,6 +50,13 @@ header.top .sub{margin-top:6px;max-width:60ch}
 .field select,.field input{background:var(--surface);border:1px solid var(--rule);border-radius:6px;padding:8px 10px;color:var(--ink);min-width:0}
 .check{display:flex;align-items:center;gap:8px;font-size:14px;color:var(--ink);padding:8px 0}
 .check input{accent-color:var(--accent);width:18px;height:18px}
+.seg{display:flex;border:1px solid var(--rule);border-radius:6px;overflow:hidden;background:var(--surface)}
+.seg button{border:0;background:none;padding:8px 12px;font-size:14px;color:var(--ink);white-space:nowrap}
+.seg button+button{border-left:1px solid var(--rule)}
+.seg button[aria-pressed="true"]{background:var(--ink);color:var(--bg);font-weight:600}
+.badge{display:inline-block;font-family:var(--sans);font-size:13px;font-weight:600;padding:3px 10px;border-radius:999px;background:var(--accent);color:#fff;vertical-align:middle;margin-left:8px;letter-spacing:0}
+.badge.propio{background:var(--pos)}
+[hidden]{display:none!important}
 
 .brand{display:inline-block;margin-bottom:14px;border-radius:8px;line-height:0}
 .brand img{height:48px;width:auto;max-width:100%}
@@ -145,7 +152,7 @@ table{border-collapse:collapse;width:100%}
   .kpis{grid-template-columns:1fr 1fr}
 }
 @media print{
-  .tabs,.actions,.controls .check,.editor .panel:first-child,.link-btn,.icon-btn{display:none!important}
+  .tabs,.actions,.controls .seg,.editor .panel:first-child,.link-btn,.icon-btn{display:none!important}
   body{background:#fff}
   .editor{grid-template-columns:1fr}
 }
@@ -163,10 +170,15 @@ table{border-collapse:collapse;width:100%}
       <label class="field">Sucursal / zona
         <select id="zona"></select>
       </label>
-      <label class="field">Arrendamiento (qq soja/ha)
+      <div class="field">Tenencia del campo
+        <div class="seg" role="group" aria-label="Tenencia del campo">
+          <button type="button" id="tenPropio" aria-pressed="true">Campo propio</button>
+          <button type="button" id="tenAlq" aria-pressed="false">Campo alquilado</button>
+        </div>
+      </div>
+      <label class="field" id="arrField">Alquiler (qq soja/ha)
         <input id="arrQQ" type="number" inputmode="decimal" step="0.5" style="width:120px">
       </label>
-      <label class="check"><input type="checkbox" id="arrOn"> Descontar arrendamiento</label>
     </div>
   </header>
 
@@ -303,6 +315,7 @@ function calc(c, override){
   const tot = CD+GC+cos;
   return {IB,GC,cos,IN,CD,MB,RI,ret: tot>0? MB/tot : NaN, tot, netT};
 }
+function tenBadge(){ return Z().arrOn ? `<span class="badge">Campo alquilado · ${fmt1.format(n(Z().arrQQ))} qq</span>` : `<span class="badge propio">Campo propio</span>`; }
 function arrUSD(){ const z=Z(); return z.arrOn ? n(z.arrQQ)/10*n(z.cultivos.soja1.precio) : 0; }
 function allResults(){
   const z = Z(), out = [];
@@ -335,7 +348,10 @@ function renderHeader(){
   if(!sel.options.length) Object.keys(ZONAS).forEach(z=>{ const o=document.createElement("option"); o.value=o.textContent=z; sel.appendChild(o); });
   sel.value = store.zona;
   $("arrQQ").value = Z().arrQQ;
-  $("arrOn").checked = !!Z().arrOn;
+  const alq = !!Z().arrOn;
+  $("tenPropio").setAttribute("aria-pressed", String(!alq));
+  $("tenAlq").setAttribute("aria-pressed", String(alq));
+  $("arrField").hidden = !alq;
 }
 
 function renderRank(){
@@ -348,7 +364,7 @@ function renderRank(){
   const minV = Math.min(0, ...res.map(val));
   const span = Math.max(...res.map(val), 0) - minV || 1;
   const zeroPct = hasNeg ? (-minV/span*100) : 0;
-  $("rankTitle").textContent = (useMN ? "Margen después de arrendamiento" : "Margen bruto por hectárea") + " · " + store.zona;
+  $("rankTitle").innerHTML = (useMN ? "Margen después del alquiler" : "Margen bruto por hectárea") + " · " + esc(store.zona) + tenBadge();
   $("rank").innerHTML = res.map((x,i)=>{
     const v = val(x);
     const w = Math.abs(v)/span*100;
@@ -449,7 +465,7 @@ function renderResults(){
   }
   const rindes = [-.3,-.15,0,.15,.3], precios = [-.15,-.075,0,.075,.15];
   $("results").innerHTML = `
-    <h3 style="margin-bottom:8px">${cropName(store.sel)} · ${esc(store.zona)}</h3>
+    <h3 style="margin-bottom:8px">${cropName(store.sel)} · ${esc(store.zona)}${tenBadge()}</h3>
     <div class="result-big"><span class="v num ${r.MB<0?"neg":""}">${usd(r.MB)}</span><span class="u">margen bruto por ha</span></div>
     <table class="lines">
       <tr><td>Ingreso bruto</td><td>${usd(r.IB)}</td></tr>
@@ -458,7 +474,7 @@ function renderResults(){
       <tr><td>Ingreso neto</td><td>${usd(r.IN)}</td></tr>
       <tr class="sub"><td>Costos directos</td><td>−${num(r.CD)}</td></tr>
       <tr class="total"><td>Margen bruto</td><td class="${r.MB<0?"neg":""}">${usd(r.MB)}</td></tr>
-      ${Z().arrOn?`<tr class="sub"><td>Arrendamiento (${fmt1.format(n(Z().arrQQ))} qq soja)</td><td>−${num(a)}</td></tr>
+      ${Z().arrOn?`<tr class="sub"><td>Alquiler (${fmt1.format(n(Z().arrQQ))} qq soja)</td><td>−${num(a)}</td></tr>
       <tr class="total"><td>Margen luego de arrendamiento</td><td class="${r.MB-a<0?"neg":""}">${usd(r.MB-a)}</td></tr>`:""}
     </table>
     <div class="kpis">
@@ -484,7 +500,7 @@ function renderComp(){
   const res = allResults();
   const arr = Z().arrOn;
   $("comp").innerHTML = `<thead><tr>
-    <th>Cultivo</th><th>Rinde<br>qq/ha</th><th>Precio<br>US$/t</th><th>Ingreso<br>bruto</th><th>Comerc.<br>+ cosecha</th><th>Costos<br>directos</th><th>Margen<br>bruto</th><th>Rinde<br>indif. qq</th><th>Retorno<br>por US$</th>${arr?"<th>Margen luego<br>de arriendo</th>":""}
+    <th>Cultivo</th><th>Rinde<br>qq/ha</th><th>Precio<br>US$/t</th><th>Ingreso<br>bruto</th><th>Comerc.<br>+ cosecha</th><th>Costos<br>directos</th><th>Margen<br>bruto</th><th>Rinde<br>indif. qq</th><th>Retorno<br>por US$</th>${arr?"<th>Margen luego<br>del alquiler</th>":""}
   </tr></thead><tbody>${res.map(x=>{
     const c = x.combo ? null : Z().cultivos[x.id];
     const rinde = x.combo ? x.parts.map(p=>fmt0.format(Z().cultivos[p].rinde)).join(" / ") : fmt0.format(c.rinde);
@@ -504,8 +520,10 @@ function renderAll(){ renderHeader(); renderRank(); renderTabs(); renderEditor()
 
 // ---------- controles ----------
 $("zona").onchange = e=>{ store.zona=e.target.value; save(); renderAll(); };
-$("arrQQ").oninput = e=>{ Z().arrQQ = e.target.value===""?0:parseFloat(e.target.value); if(!Z().arrOn){ Z().arrOn=true; $("arrOn").checked=true; toast("Arrendamiento activado"); } save(); renderRank(); renderComp(); renderResults(); };
-$("arrOn").onchange = e=>{ Z().arrOn = e.target.checked; save(); renderRank(); renderComp(); renderResults(); };
+$("arrQQ").oninput = e=>{ Z().arrQQ = e.target.value===""?0:parseFloat(e.target.value); save(); renderRank(); renderComp(); renderResults(); };
+function setTenencia(alq){ Z().arrOn = alq; save(); renderHeader(); renderRank(); renderComp(); renderResults(); if(alq) $("arrQQ").focus(); }
+$("tenPropio").onclick = ()=>setTenencia(false);
+$("tenAlq").onclick = ()=>setTenencia(true);
 
 function toast(msg){ const el=$("toast"); el.textContent=msg; el.classList.add("show"); clearTimeout(t); t=setTimeout(()=>el.classList.remove("show"),2200); }
 
@@ -517,10 +535,10 @@ function resumen(){
     const c = x.combo?null:Z().cultivos[x.id];
     s += `• ${x.nombre}: ${usd(x.r.MB)}/ha`;
     if(!x.combo) s += ` (${fmt0.format(c.rinde)} qq · US$ ${fmt0.format(c.precio)}/t · RI ${isFinite(x.r.RI)?fmt1.format(x.r.RI):"—"} qq)`;
-    if(arr) s += ` → ${usd(x.MN)} con arriendo`;
+    if(arr) s += ` → ${usd(x.MN)} con alquiler`;
     s += "\n";
   });
-  if(arr) s += `\nArrendamiento: ${fmt1.format(n(Z().arrQQ))} qq soja/ha`;
+  s += arr ? `\nCampo alquilado: ${fmt1.format(n(Z().arrQQ))} qq soja/ha` : `\nCampo propio (sin alquiler)`;
   s += `\nValores orientativos, sujetos a precios del día.`;
   return s;
 }
