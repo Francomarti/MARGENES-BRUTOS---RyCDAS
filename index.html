@@ -83,6 +83,7 @@ header.top .sub{margin-top:6px;max-width:60ch}
 /* tabs */
 .tabs{display:flex;gap:6px;overflow-x:auto;margin:34px 0 0;padding-bottom:2px}
 .tab{border:1px solid var(--rule);background:var(--surface);border-radius:999px;padding:7px 14px;white-space:nowrap}
+.tab-combo{font-style:italic;border-style:dashed}
 .tab[aria-selected="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
 
 .editor{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(0,1fr);gap:22px;margin-top:16px}
@@ -113,6 +114,7 @@ header.top .sub{margin-top:6px;max-width:60ch}
 table{border-collapse:collapse;width:100%}
 .lines td{padding:7px 0;border-bottom:1px solid var(--rule)}
 .lines td:last-child{text-align:right;font-variant-numeric:tabular-nums}
+.combo-lines td:not(:first-child){text-align:right;font-variant-numeric:tabular-nums;padding-left:12px}
 .lines tr.total td{font-weight:600;border-bottom:2px solid var(--ink)}
 .lines tr.sub td:first-child{padding-left:14px;color:var(--muted)}
 .kpis{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:14px}
@@ -226,7 +228,8 @@ const CROPS = [
   {id:"soja2",   nombre:"Soja 2da", ref:"May-27"},
   {id:"girasol", nombre:"Girasol",  ref:"Mar-27 c/plus"},
   {id:"trigo",   nombre:"Trigo",    ref:"Dic/Ene-27"},
-  {id:"cebada",  nombre:"Cebada forrajera", ref:"Dic/Ene-27"}
+  {id:"cebada",  nombre:"Cebada forrajera", ref:"Dic/Ene-27"},
+  {id:"arveja",  nombre:"Arveja",   ref:"Dic/Ene-27"}
 ];
 const COMBOS = [
   {id:"trigo_soja2",  nombre:"Trigo / Soja 2da",  parts:["trigo","soja2"]},
@@ -236,18 +239,18 @@ const CATS = ["Semilla","Fertilización","Protección","Labores","Otros"];
 
 // Rinde (qq/ha), flete largo (USD/t) y arrendamiento (qq soja/ha) por zona
 const ZONAS = {
-  "Tandil":        {flete:18, arr:11, rinde:{maiz:85,soja1:32,soja2:18,girasol:26,trigo:55,cebada:55}},
-  "Azul":          {flete:24, arr:10, rinde:{maiz:80,soja1:30,soja2:17,girasol:24,trigo:48,cebada:50}},
-  "Olavarría":     {flete:26, arr:9,  rinde:{maiz:75,soja1:28,soja2:16,girasol:24,trigo:45,cebada:48}},
-  "Bolívar":       {flete:30, arr:11, rinde:{maiz:85,soja1:33,soja2:20,girasol:25,trigo:42,cebada:45}},
-  "Gral. Belgrano":{flete:30, arr:10, rinde:{maiz:80,soja1:30,soja2:18,girasol:23,trigo:40,cebada:42}}
+  "Tandil":        {flete:18, arr:11, rinde:{maiz:85,soja1:32,soja2:18,girasol:26,trigo:55,cebada:55,arveja:30}},
+  "Azul":          {flete:24, arr:10, rinde:{maiz:80,soja1:30,soja2:17,girasol:24,trigo:48,cebada:50,arveja:28}},
+  "Olavarría":     {flete:26, arr:9,  rinde:{maiz:75,soja1:28,soja2:16,girasol:24,trigo:45,cebada:48,arveja:26}},
+  "Bolívar":       {flete:30, arr:11, rinde:{maiz:85,soja1:33,soja2:20,girasol:25,trigo:42,cebada:45,arveja:25}},
+  "Gral. Belgrano":{flete:30, arr:10, rinde:{maiz:80,soja1:30,soja2:18,girasol:23,trigo:40,cebada:42,arveja:25}}
 };
 
 // Precio de referencia a cosecha USD/t (editar con el Matba-Rofex del día)
-const PRECIO = {maiz:210, soja1:355, soja2:355, girasol:440, trigo:230, cebada:220};
+const PRECIO = {maiz:210, soja1:355, soja2:355, girasol:440, trigo:230, cebada:220, arveja:280};
 let PRECIOS_FECHA = "21/09/2026";
 let PRECIOS_FUENTE = "mesa de granos RyCDAS, Quequén";
-const SECADA = {maiz:10, soja1:0, soja2:0, girasol:3, trigo:0, cebada:0};
+const SECADA = {maiz:10, soja1:0, soja2:0, girasol:3, trigo:0, cebada:0, arveja:0};
 
 const COSTOS = {
   maiz:[["Semilla","Híbrido (1 bolsa/ha)",190],["Fertilización","Urea 200 kg",120],["Fertilización","MAP 100 kg",80],["Protección","Herbicidas",70],["Protección","Insecticida / fungicida",25],["Labores","Siembra",60],["Labores","Pulverizaciones (3)",30],["Labores","Fertilizaciones (2)",24],["Otros","Seguro",15]],
@@ -255,6 +258,7 @@ const COSTOS = {
   soja2:[["Semilla","Semilla 90 kg",81],["Semilla","Inoculante + curasemilla",10],["Protección","Herbicidas",50],["Protección","Insecticida / fungicida",25],["Labores","Siembra",60],["Labores","Pulverizaciones (3)",30],["Otros","Seguro",8]],
   girasol:[["Semilla","Híbrido 55.000 sem/ha",95],["Fertilización","MAP 100 kg",80],["Fertilización","Urea 80 kg",48],["Protección","Herbicidas",70],["Protección","Insecticida / fungicida",25],["Labores","Siembra",60],["Labores","Pulverizaciones (3)",30],["Labores","Fertilización",12],["Otros","Seguro",12]],
   trigo:[["Semilla","Semilla 130 kg",65],["Semilla","Curasemilla",10],["Fertilización","Urea 200 kg",120],["Fertilización","MAP 100 kg",80],["Protección","Herbicidas",45],["Protección","Fungicida",45],["Labores","Siembra",60],["Labores","Pulverizaciones (3)",30],["Labores","Fertilizaciones (2)",24],["Otros","Seguro",15]],
+  arveja:[["Semilla","Semilla 200 kg",90],["Semilla","Inoculante + curasemilla",12],["Fertilización","Fosforado",40],["Protección","Herbicidas",50],["Protección","Insecticida / fungicida",35],["Labores","Siembra",60],["Labores","Pulverizaciones (3)",30],["Otros","Seguro",10]],
   cebada:[["Semilla","Semilla 120 kg",54],["Semilla","Curasemilla",10],["Fertilización","Urea 180 kg",108],["Fertilización","MAP 90 kg",72],["Protección","Herbicidas",45],["Protección","Fungicida",40],["Labores","Siembra",60],["Labores","Pulverizaciones (3)",30],["Labores","Fertilizaciones (2)",24],["Otros","Seguro",15]]
 };
 
@@ -294,7 +298,13 @@ function sincronizarPrecios(){
   return habia;
 }
 let preciosActualizados = sincronizarPrecios();
-function Z(){ if(!store.zonas[store.zona]) store.zonas[store.zona] = defaultZona(store.zona); return store.zonas[store.zona]; }
+function Z(){
+  if(!store.zonas[store.zona]) store.zonas[store.zona] = defaultZona(store.zona);
+  const z = store.zonas[store.zona];
+  if(CROPS.some(c=>!z.cultivos[c.id])){ const d = defaultZona(store.zona); CROPS.forEach(c=>{ if(!z.cultivos[c.id]) z.cultivos[c.id] = d.cultivos[c.id]; }); }
+  return z;
+}
+const isCombo = id => COMBOS.some(cb=>cb.id===id);
 function save(){ try{ localStorage.setItem(STORE_KEY, JSON.stringify(store)); }catch(e){} }
 
 // ---------- cálculo ----------
@@ -370,7 +380,7 @@ function renderRank(){
     const w = Math.abs(v)/span*100;
     const left = v>=0 ? zeroPct : zeroPct - w;
     const sub = x.combo ? "doble cultivo" : fmt0.format(Z().cultivos[x.id].rinde)+" qq · US$ "+fmt0.format(Z().cultivos[x.id].precio)+"/t";
-    const target = x.combo ? x.parts[0] : x.id;
+    const target = x.id;
     return `<button class="row${i===0&&v>0?" best":""}${x.combo?" combo":""}" data-go="${target}">
       <span class="name">${esc(x.nombre)}<small>${sub}</small></span>
       <span class="track">${hasNeg?`<span class="zero" style="left:${zeroPct}%"></span>`:""}<span class="fill${v<0?" neg":""}" style="left:${left}%;width:${Math.max(w,.5)}%"></span></span>
@@ -381,7 +391,7 @@ function renderRank(){
 }
 
 function renderTabs(){
-  $("tabs").innerHTML = CROPS.map(c=>`<button class="tab" role="tab" aria-selected="${c.id===store.sel}" data-id="${c.id}">${c.nombre}</button>`).join("");
+  $("tabs").innerHTML = CROPS.concat(COMBOS).map(c=>`<button class="tab${isCombo(c.id)?" tab-combo":""}" role="tab" aria-selected="${c.id===store.sel}" data-id="${c.id}">${c.nombre}</button>`).join("");
   $("tabs").querySelectorAll(".tab").forEach(b=>b.onclick=()=>{ store.sel=b.dataset.id; save(); renderTabs(); renderEditor(); });
 }
 
@@ -391,6 +401,7 @@ function inputField(key,label,step){
 }
 
 function renderEditor(){
+  if(isCombo(store.sel)) return renderComboEditor();
   const c = Z().cultivos[store.sel];
   const cr = CROPS.find(x=>x.id===store.sel);
   const byCat = {};
@@ -454,14 +465,54 @@ function refreshCatTotals(){
   });
 }
 
+function renderComboEditor(){
+  const cb = COMBOS.find(x=>x.id===store.sel);
+  $("inputs").innerHTML = `
+    <h3 style="margin-bottom:6px">Doble cultivo</h3>
+    <p class="muted" style="font-size:14px;margin-bottom:14px">El margen de ${esc(cb.nombre)} suma los dos cultivos en la misma hectárea y el mismo año. Los números salen de cada cultivo por separado: para cambiar rinde, precio o costos, editá cada uno.</p>
+    ${cb.parts.map(p=>{ const c=Z().cultivos[p], r=calc(c); return `
+      <div class="cat" style="margin-top:14px">
+        <div class="cat-head"><b>${cropName(p)}</b><button class="link-btn" data-go="${p}">Editar ${cropName(p).toLowerCase()}</button></div>
+        <table class="lines"><tr><td>Rinde</td><td>${fmt0.format(n(c.rinde))} qq/ha</td></tr><tr><td>Precio</td><td>US$ ${fmt0.format(n(c.precio))}/t</td></tr><tr><td>Costos directos</td><td>${usd(r.CD)}</td></tr><tr><td>Margen bruto</td><td class="${r.MB<0?"neg":""}">${usd(r.MB)}</td></tr></table>
+      </div>`; }).join("")}`;
+  $("inputs").querySelectorAll("[data-go]").forEach(b=>b.onclick=()=>{ store.sel=b.dataset.go; save(); renderTabs(); renderEditor(); });
+  renderResults();
+}
+
+function renderComboResults(){
+  const cb = COMBOS.find(x=>x.id===store.sel);
+  const rs = cb.parts.map(p=>calc(Z().cultivos[p]));
+  const T = k => rs.reduce((a,r)=>a+r[k],0);
+  const MB = T("MB"), a = arrUSD(), tot = T("tot");
+  const col = (lbl,k,neg) => `<tr${k==="MB"?' class="total"':""}><td>${lbl}</td>${rs.map(r=>`<td>${neg?"−"+num(r[k]):usd(r[k])}</td>`).join("")}<td><b>${neg?"−"+num(T(k)):usd(T(k))}</b></td></tr>`;
+  $("results").innerHTML = `
+    <h3 style="margin-bottom:8px">${esc(cb.nombre)} · ${esc(store.zona)}${tenBadge()}</h3>
+    <div class="result-big"><span class="v num ${MB<0?"neg":""}">${usd(MB)}</span><span class="u">margen bruto del doble cultivo por ha</span></div>
+    <div class="scroll"><table class="lines combo-lines">
+      <tr><td></td>${cb.parts.map(p=>`<td class="muted">${cropName(p)}</td>`).join("")}<td class="muted">Total</td></tr>
+      ${col("Ingreso bruto","IB")}
+      ${col("Comercialización","GC",true)}
+      ${col("Cosecha","cos",true)}
+      ${col("Costos directos","CD",true)}
+      ${col("Margen bruto","MB")}
+      ${Z().arrOn?`<tr class="sub"><td>Alquiler (${fmt1.format(n(Z().arrQQ))} qq soja, una sola vez)</td>${cb.parts.map(()=>"<td></td>").join("")}<td>−${num(a)}</td></tr>
+      <tr class="total"><td>Margen luego del alquiler</td>${cb.parts.map(()=>"<td></td>").join("")}<td class="${MB-a<0?"neg":""}">${usd(MB-a)}</td></tr>`:""}
+    </table></div>
+    <div class="kpis">
+      ${cb.parts.map((p,i)=>`<div class="kpi"><div class="k">Rinde indif. ${cropName(p).toLowerCase()}</div><div class="v num">${isFinite(rs[i].RI)?fmt1.format(rs[i].RI):"—"} <span style="font-size:13px" class="muted">qq/ha</span></div></div>`).join("")}
+      <div class="kpi"><div class="k">Retorno por dólar gastado</div><div class="v num">${tot>0?pctF.format(MB/tot):"—"}</div></div>
+    </div>`;
+}
+
 function renderResults(){
+  if(isCombo(store.sel)) return renderComboResults();
   const c = Z().cultivos[store.sel];
   const r = calc(c);
   const a = arrUSD();
   const combo = COMBOS.find(cb=>cb.parts.includes(store.sel));
   let comboHtml = "";
   if(combo && store.sel==="soja2"){
-    comboHtml = `<p class="muted" style="font-size:13px;margin-top:10px">La soja 2da se muestra en el ranking sumada a su cultivo de invierno (trigo o cebada).</p>`;
+    comboHtml = `<p class="muted" style="font-size:13px;margin-top:10px">La soja 2da se muestra en el ranking sumada a su cultivo de invierno: mirá las pestañas Trigo / Soja 2da y Cebada / Soja 2da.</p>`;
   }
   const rindes = [-.3,-.15,0,.15,.3], precios = [-.15,-.075,0,.075,.15];
   $("results").innerHTML = `
