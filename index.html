@@ -259,10 +259,10 @@ const COSTOS = {
   maiz:[["Semilla","Híbrido (1 bolsa/ha)",190],["Fertilización","Urea 200 kg",120],["Fertilización","MAP 100 kg",80],["Protección","Herbicidas",70],["Protección","Insecticida / fungicida",25],["Labores","Siembra",60],["Labores","Pulverizaciones (3)",30],["Labores","Fertilizaciones (2)",24],["Otros","Seguro",15]],
   soja1:[["Semilla","Semilla 80 kg",72],["Semilla","Inoculante + curasemilla",12],["Fertilización","Fosforado",40],["Protección","Herbicidas",80],["Protección","Insecticida / fungicida",35],["Labores","Siembra",60],["Labores","Pulverizaciones (4)",40],["Otros","Seguro",10]],
   soja2:[["Semilla","Semilla 90 kg",81],["Semilla","Inoculante + curasemilla",10],["Protección","Herbicidas",50],["Protección","Insecticida / fungicida",25],["Labores","Siembra",60],["Labores","Pulverizaciones (3)",30],["Otros","Seguro",8]],
-  girasol:[["Semilla","Híbrido 55.000 sem/ha",95],["Fertilización","MAP 100 kg",80],["Fertilización","Urea 80 kg",48],["Protección","Herbicidas",70],["Protección","Insecticida / fungicida",25],["Labores","Siembra",60],["Labores","Pulverizaciones (3)",30],["Labores","Fertilización",12],["Otros","Seguro",12]],
+  girasol:[["Semilla","Híbrido 55.000 sem/ha",95],["Fertilización","MAP 70 kg",56],["Fertilización","Urea 50 kg",30],["Protección","Herbicidas",70],["Protección","Insecticida / fungicida",25],["Labores","Siembra",60],["Labores","Pulverizaciones (3)",30],["Labores","Fertilización",12],["Otros","Seguro",12]],
   trigo:[["Semilla","Semilla 130 kg",65],["Semilla","Curasemilla",10],["Fertilización","Urea 200 kg",120],["Fertilización","MAP 100 kg",80],["Protección","Herbicidas",45],["Protección","Fungicida",45],["Labores","Siembra",60],["Labores","Pulverizaciones (3)",30],["Labores","Fertilizaciones (2)",24],["Otros","Seguro",15]],
   arveja:[["Semilla","Semilla 200 kg",90],["Semilla","Inoculante + curasemilla",12],["Fertilización","Fosforado",40],["Protección","Herbicidas",50],["Protección","Insecticida / fungicida",35],["Labores","Siembra",60],["Labores","Pulverizaciones (3)",30],["Otros","Seguro",10]],
-  cervecera:[["Semilla","Semilla fiscalizada 120 kg",66],["Semilla","Curasemilla",10],["Fertilización","Urea 180 kg",108],["Fertilización","MAP 90 kg",72],["Protección","Herbicidas",45],["Protección","Fungicidas (2)",55],["Labores","Siembra",60],["Labores","Pulverizaciones (3)",30],["Labores","Fertilizaciones (2)",24],["Otros","Seguro",15]],
+  cervecera:[["Semilla","Semilla fiscalizada 120 kg",66],["Semilla","Curasemilla",10],["Fertilización","Urea 140 kg",84],["Fertilización","MAP 90 kg",72],["Protección","Herbicidas",45],["Protección","Fungicidas (2)",55],["Labores","Siembra",60],["Labores","Pulverizaciones (3)",30],["Labores","Fertilizaciones (2)",24],["Otros","Seguro",15]],
   cebada:[["Semilla","Semilla 120 kg",54],["Semilla","Curasemilla",10],["Fertilización","Urea 180 kg",108],["Fertilización","MAP 90 kg",72],["Protección","Herbicidas",45],["Protección","Fungicida",40],["Labores","Siembra",60],["Labores","Pulverizaciones (3)",30],["Labores","Fertilizaciones (2)",24],["Otros","Seguro",15]]
 };
 
@@ -310,6 +310,13 @@ function sincronizarPrecios(){
   return habia;
 }
 let preciosActualizados = sincronizarPrecios();
+if(!store.fertV){
+  const CAMBIOS = {girasol:[["MAP 100 kg",80,"MAP 70 kg",56],["Urea 80 kg",48,"Urea 50 kg",30]], cervecera:[["Urea 180 kg",108,"Urea 140 kg",84]]};
+  Object.values(store.zonas).forEach(z=>{ if(!z || !z.cultivos) return;
+    for(const id in CAMBIOS){ const c=z.cultivos[id]; if(!c) continue;
+      CAMBIOS[id].forEach(([viejo,usdV,nuevo,usdN])=>{ const it=c.costos.find(x=>x.item===viejo && n(x.usd)===usdV); if(it){ it.item=nuevo; it.usd=usdN; } }); } });
+  store.fertV = 1;
+}
 if(!store.paritariaV){
   Object.values(store.zonas).forEach(z=>{ if(z && z.cultivos) Object.values(z.cultivos).forEach(c=>{ if(!c.paritaria) c.paritaria = 4; }); });
   store.paritariaV = 1;
