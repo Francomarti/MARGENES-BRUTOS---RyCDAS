@@ -201,7 +201,7 @@ table{border-collapse:collapse;width:100%}
 
   <section class="comp">
     <h2>Comparativo completo</h2>
-    <p class="muted" style="font-size:13px;margin-bottom:10px">Todos los valores en USD/ha salvo indicación. Rinde de indiferencia calculado sobre costos directos + cosecha + comercialización.</p>
+    <p class="muted" style="font-size:13px;margin-bottom:10px">Todos los valores en USD/ha salvo indicación. Rinde de indiferencia calculado sobre costos directos + cosecha + comercialización, y en campo alquilado también el alquiler (en los dobles cultivos, el alquiler se carga al cultivo de invierno).</p>
     <div class="scroll"><table id="comp"></table></div>
   </section>
 
@@ -309,7 +309,7 @@ function save(){ try{ localStorage.setItem(STORE_KEY, JSON.stringify(store)); }c
 
 // ---------- cálculo ----------
 function n(v){ v = parseFloat(v); return isFinite(v) ? v : 0; }
-function calc(c, override){
+function calc(c, override, opts){
   const r = Object.assign({}, c, override||{});
   const t = n(r.rinde)/10, p = n(r.precio);
   const IB = t*p;
@@ -321,7 +321,8 @@ function calc(c, override){
   const CD = r.costos.reduce((a,x)=>a+n(x.usd),0);
   const MB = IN - CD;
   const netT = p*(1 - pct - n(r.cosechaPct)/100) - porT;
-  const RI = netT>0 ? CD/netT*10 : NaN;
+  const alq = (opts && opts.sinAlq) ? 0 : arrUSD();
+  const RI = netT>0 ? (CD+alq)/netT*10 : NaN;
   const tot = CD+GC+cos;
   return {IB,GC,cos,IN,CD,MB,RI,ret: tot>0? MB/tot : NaN, tot, netT};
 }
@@ -331,7 +332,7 @@ function allResults(){
   const z = Z(), out = [];
   CROPS.forEach(cr=>{ if(cr.id==="soja2") return; const r = calc(z.cultivos[cr.id]); out.push({id:cr.id,nombre:cr.nombre,combo:false,r,MN:r.MB-arrUSD()}); });
   COMBOS.forEach(cb=>{
-    const rs = cb.parts.map(p=>calc(z.cultivos[p]));
+    const rs = cb.parts.map((p,i)=>calc(z.cultivos[p],null,{sinAlq:i>0}));
     const r = {IB:0,GC:0,cos:0,IN:0,CD:0,MB:0,tot:0};
     rs.forEach(x=>{ for(const k in r) r[k]+=x[k]; });
     r.ret = r.tot>0 ? r.MB/r.tot : NaN; r.RI = NaN;
@@ -481,7 +482,7 @@ function renderComboEditor(){
 
 function renderComboResults(){
   const cb = COMBOS.find(x=>x.id===store.sel);
-  const rs = cb.parts.map(p=>calc(Z().cultivos[p]));
+  const rs = cb.parts.map((p,i)=>calc(Z().cultivos[p],null,{sinAlq:i>0}));
   const T = k => rs.reduce((a,r)=>a+r[k],0);
   const MB = T("MB"), a = arrUSD(), tot = T("tot");
   const col = (lbl,k,neg) => `<tr${k==="MB"?' class="total"':""}><td>${lbl}</td>${rs.map(r=>`<td>${neg?"−"+num(r[k]):usd(r[k])}</td>`).join("")}<td><b>${neg?"−"+num(T(k)):usd(T(k))}</b></td></tr>`;
@@ -499,7 +500,7 @@ function renderComboResults(){
       <tr class="total"><td>Margen luego del alquiler</td>${cb.parts.map(()=>"<td></td>").join("")}<td class="${MB-a<0?"neg":""}">${usd(MB-a)}</td></tr>`:""}
     </table></div>
     <div class="kpis">
-      ${cb.parts.map((p,i)=>`<div class="kpi"><div class="k">Rinde indif. ${cropName(p).toLowerCase()}</div><div class="v num">${isFinite(rs[i].RI)?fmt1.format(rs[i].RI):"—"} <span style="font-size:13px" class="muted">qq/ha</span></div></div>`).join("")}
+      ${cb.parts.map((p,i)=>`<div class="kpi"><div class="k">Rinde indif. ${cropName(p).toLowerCase()}${Z().arrOn&&i===0?" (con alquiler)":""}</div><div class="v num">${isFinite(rs[i].RI)?fmt1.format(rs[i].RI):"—"} <span style="font-size:13px" class="muted">qq/ha</span></div></div>`).join("")}
       <div class="kpi"><div class="k">Retorno por dólar gastado</div><div class="v num">${tot>0?pctF.format(MB/tot):"—"}</div></div>
     </div>`;
 }
@@ -529,7 +530,7 @@ function renderResults(){
       <tr class="total"><td>Margen luego de arrendamiento</td><td class="${r.MB-a<0?"neg":""}">${usd(r.MB-a)}</td></tr>`:""}
     </table>
     <div class="kpis">
-      <div class="kpi"><div class="k">Rinde de indiferencia</div><div class="v num">${isFinite(r.RI)?fmt1.format(r.RI):"—"} <span style="font-size:13px" class="muted">qq/ha</span></div></div>
+      <div class="kpi"><div class="k">Rinde de indiferencia${Z().arrOn?" (con alquiler)":""}</div><div class="v num">${isFinite(r.RI)?fmt1.format(r.RI):"—"} <span style="font-size:13px" class="muted">qq/ha</span></div></div>
       <div class="kpi"><div class="k">Retorno por dólar gastado</div><div class="v num">${isFinite(r.ret)?pctF.format(r.ret):"—"}</div></div>
       <div class="kpi"><div class="k">Precio neto en campo</div><div class="v num">${usd(r.netT)}<span style="font-size:13px" class="muted">/t</span></div></div>
     </div>
@@ -551,7 +552,7 @@ function renderComp(){
   const res = allResults();
   const arr = Z().arrOn;
   $("comp").innerHTML = `<thead><tr>
-    <th>Cultivo</th><th>Rinde<br>qq/ha</th><th>Precio<br>US$/t</th><th>Ingreso<br>bruto</th><th>Comerc.<br>+ cosecha</th><th>Costos<br>directos</th><th>Margen<br>bruto</th><th>Rinde<br>indif. qq</th><th>Retorno<br>por US$</th>${arr?"<th>Margen luego<br>del alquiler</th>":""}
+    <th>Cultivo</th><th>Rinde<br>qq/ha</th><th>Precio<br>US$/t</th><th>Ingreso<br>bruto</th><th>Comerc.<br>+ cosecha</th><th>Costos<br>directos</th><th>Margen<br>bruto</th><th>Rinde<br>indif. qq${arr?"<br>c/ alquiler":""}</th><th>Retorno<br>por US$</th>${arr?"<th>Margen luego<br>del alquiler</th>":""}
   </tr></thead><tbody>${res.map(x=>{
     const c = x.combo ? null : Z().cultivos[x.id];
     const rinde = x.combo ? x.parts.map(p=>fmt0.format(Z().cultivos[p].rinde)).join(" / ") : fmt0.format(c.rinde);
