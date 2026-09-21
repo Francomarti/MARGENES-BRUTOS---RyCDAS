@@ -139,7 +139,11 @@ table{border-collapse:collapse;width:100%}
 .comp th{font-weight:600;color:var(--muted);font-size:12.5px;vertical-align:bottom}
 .comp th:first-child,.comp td:first-child{text-align:left}
 .comp tbody tr:hover{background:var(--surface)}
-.comp tr.combo td:first-child{font-style:italic}
+.comp tr.combo td:nth-child(2){font-style:italic}
+.comp th.pos,.comp td.pos{text-align:center;width:36px;padding-left:4px;padding-right:4px}
+.comp td.pos{font-family:var(--serif);font-weight:600;color:var(--muted)}
+.comp tr.top td{background:color-mix(in srgb,var(--accent) 12%,transparent)}
+.comp tr.top td.pos{color:var(--accent-ink)}
 
 .actions{display:flex;flex-wrap:wrap;gap:10px;margin-top:30px;padding-top:18px;border-top:2px solid var(--ink)}
 .btn{border:1px solid var(--ink);background:var(--ink);color:var(--bg);padding:9px 16px;border-radius:6px;font-weight:600}
@@ -598,16 +602,16 @@ function renderResults(){
 }
 
 function renderComp(){
-  const res = allResults();
   const arr = Z().arrOn;
+  const res = allResults().sort((a,b)=> arr ? b.MN-a.MN : b.r.MB-a.r.MB);
   $("comp").innerHTML = `<thead><tr>
-    <th>Cultivo</th><th>Rinde<br>qq/ha</th><th>Precio<br>US$/t</th><th>Ingreso<br>bruto</th><th>Comerc.<br>+ cosecha</th><th>Costos<br>directos</th><th>Margen<br>bruto</th><th>Rinde<br>indif. qq${arr?"<br>c/ alquiler":""}</th><th>Retorno<br>por US$</th>${arr?"<th>Margen luego<br>del alquiler</th>":""}
-  </tr></thead><tbody>${res.map(x=>{
+    <th class="pos">#</th><th>Cultivo</th><th>Rinde<br>qq/ha</th><th>Precio<br>US$/t</th><th>Ingreso<br>bruto</th><th>Comerc.<br>+ cosecha</th><th>Costos<br>directos</th><th>Margen<br>bruto</th><th>Rinde<br>indif. qq${arr?"<br>c/ alquiler":""}</th><th>Retorno<br>por US$</th>${arr?"<th>Margen luego<br>del alquiler</th>":""}
+  </tr></thead><tbody>${res.map((x,i)=>{
     const c = x.combo ? null : Z().cultivos[x.id];
     const rinde = x.combo ? x.parts.map(p=>fmt0.format(Z().cultivos[p].rinde)).join(" / ") : fmt0.format(c.rinde);
     const precio = x.combo ? x.parts.map(p=>fmt0.format(Z().cultivos[p].precio)).join(" / ") : fmt0.format(c.precio);
     const ri = x.combo ? x.rs.map(r=>isFinite(r.RI)?fmt1.format(r.RI):"—").join(" / ") : (isFinite(x.r.RI)?fmt1.format(x.r.RI):"—");
-    return `<tr class="${x.combo?"combo":""}"><td>${conEmo(x.id,x.nombre)}</td><td>${rinde}</td><td>${precio}</td><td>${num(x.r.IB)}</td><td>${num(x.r.GC+x.r.cos)}</td><td>${num(x.r.CD)}</td><td class="${x.r.MB<0?"neg":""}"><b>${num(x.r.MB)}</b></td><td>${ri}</td><td>${isFinite(x.r.ret)?pctF.format(x.r.ret):"—"}</td>${arr?`<td class="${x.MN<0?"neg":""}">${num(x.MN)}</td>`:""}</tr>`;
+    return `<tr class="${x.combo?"combo":""}${i===0?" top":""}"><td class="pos">${i+1}</td><td>${conEmo(x.id,x.nombre)}</td><td>${rinde}</td><td>${precio}</td><td>${num(x.r.IB)}</td><td>${num(x.r.GC+x.r.cos)}</td><td>${num(x.r.CD)}</td><td class="${x.r.MB<0?"neg":""}"><b>${num(x.r.MB)}</b></td><td>${ri}</td><td>${isFinite(x.r.ret)?pctF.format(x.r.ret):"—"}</td>${arr?`<td class="${x.MN<0?"neg":""}">${num(x.MN)}</td>`:""}</tr>`;
   }).join("")}</tbody>`;
 }
 
