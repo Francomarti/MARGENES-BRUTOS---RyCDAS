@@ -1,0 +1,36 @@
+{
+  "fecha": "21/09/2026",
+  "fuente": "mesa de granos RyCDAS, Quequén",
+  "precios": {
+    "maiz": {
+      "precio": 210,
+      "posicion": "Abr/May-27",
+      "origen": "Ideas de precios SUR 09/09 - QQ abr/may"
+    },
+    "soja1": {
+      "precio": 355,
+      "posicion": "May-27",
+      "origen": "Bruno 17/09 - Soja QQ y BB Mayo"
+    },
+    "soja2": {
+      "precio": 355,
+      "posicion": "May-27",
+      "origen": "Igual a soja 1ra"
+    },
+    "girasol": {
+      "precio": 440,
+      "posicion": "Mar-27 c/plus",
+      "origen": "Bruno 16/09 - Quequén cosecha 2027 400+40"
+    },
+    "trigo": {
+      "precio": 230,
+      "posicion": "Dic/Ene-27",
+      "origen": "Bruno 17/09 - Trigo cosecha 2027 Quequén"
+    },
+    "cebada": {
+      "precio": 220,
+      "posicion": "Dic/Ene-27",
+      "origen": "Bruno 18/09 - Forrajera Bahía y Neco"
+    }
+  }
+}
