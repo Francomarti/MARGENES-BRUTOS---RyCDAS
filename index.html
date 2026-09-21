@@ -226,7 +226,7 @@ table{border-collapse:collapse;width:100%}
     <button class="btn ghost" id="btnPrint">Imprimir / PDF</button>
     <button class="btn ghost" id="btnReset">Volver a valores de referencia</button>
   </div>
-  <p class="note">Valores de referencia orientativos para el centro y sudeste bonaerense, a validar antes de usar con un productor: los precios son a cosecha 2027 puesto Quequén, informados por la mesa de granos de RyCDAS a la fecha indicada y los costos de insumos y labores deben ajustarse a la lista vigente de cada sucursal. El margen bruto no incluye estructura, impuestos ni amortizaciones.</p>
+  <p class="note">Valores de referencia orientativos para el centro y sudeste bonaerense, a validar antes de usar con un productor: los precios son a cosecha 2027 en el destino de entrega elegido para cada cultivo, informados por la mesa de granos de RyCDAS a la fecha indicada y los costos de insumos y labores deben ajustarse a la lista vigente de cada sucursal. El margen bruto no incluye estructura, impuestos ni amortizaciones.</p>
   <p class="autor">Herramienta desarrollada por <b>Ing. Agr. Franco Martignoni</b> (MP 4749) para Rindes y Cultivos DAS. © 2026. Todos los derechos reservados; prohibida su reproducción o uso fuera de RyCDAS sin autorización del autor.</p>
 </div>
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
@@ -304,6 +304,19 @@ const PRECIOS_DEST = {
   arveja:{quequen:280}
 };
 const precioDest = (id,dest) => { const t=PRECIOS_DEST[id]; return t && t[dest||"quequen"]!=null ? t[dest||"quequen"] : null; };
+function estadoPrecio(id,c){
+  const d=c.destino||"quequen", mesa=precioDest(id,d), man=(c.preciosMan||{})[d];
+  if(man!=null && (mesa==null || Math.abs(n(man)-mesa)>0.001) && Math.abs(n(man)-n(c.precio))<0.001) return {tipo:"manual",mesa};
+  if(mesa!=null && Math.abs(mesa-n(c.precio))<0.001) return {tipo:"mesa",mesa};
+  if(mesa!=null) return {tipo:"manual",mesa};
+  return {tipo:"sin",mesa:null};
+}
+function notaPrecio(id,c){
+  const e=estadoPrecio(id,c), dn=esc(destNombre(c.destino));
+  if(e.tipo==="mesa") return `Precio de la mesa de granos para ${dn}.`;
+  if(e.tipo==="manual") return `Precio cargado a mano para ${dn}${e.mesa!=null?` (la mesa informó US$ ${fmt0.format(e.mesa)}/t)`:""}.`;
+  return `<b style="color:var(--accent-ink)">⚠ La mesa no informó precio de ${esc(cropName(id).toLowerCase())} para ${dn}: cargá el precio de ese destino.</b>`;
+}
 let PRECIOS_FECHA = "21/09/2026";
 let PRECIOS_FUENTE = "mesa de granos RyCDAS, según destino";
 const SECADA = {maiz:10, soja1:0, soja2:0, girasol:3, trigo:0, cebada:0, cervecera:0, arveja:0};
@@ -357,7 +370,7 @@ try{
 if(!ZONAS[store.zona]) store.zona = "Tandil";
 function sincronizarPrecios(){
   if(store.preciosFecha === PRECIOS_FECHA) return false;
-  Object.values(store.zonas).forEach(z=>{ if(z && z.cultivos) CROPS.forEach(c=>{ const cc=z.cultivos[c.id]; if(!cc) return; const p=precioDest(c.id,cc.destino); if(p!=null) cc.precio=p; }); });
+  Object.values(store.zonas).forEach(z=>{ if(z && z.cultivos) CROPS.forEach(c=>{ const cc=z.cultivos[c.id]; if(!cc) return; cc.preciosMan={}; const p=precioDest(c.id,cc.destino); if(p!=null) cc.precio=p; }); });
   const habia = !!store.preciosFecha;
   store.preciosFecha = PRECIOS_FECHA;
   return habia;
@@ -475,7 +488,7 @@ function renderRank(){
     const v = val(x);
     const w = Math.abs(v)/span*100;
     const left = v>=0 ? zeroPct : zeroPct - w;
-    const sub = x.combo ? "doble cultivo" : fmt0.format(Z().cultivos[x.id].rinde)+" qq · US$ "+fmt0.format(Z().cultivos[x.id].precio)+"/t · "+esc(destNombre(Z().cultivos[x.id].destino).replace("Puerto ",""));
+    const sub = x.combo ? "doble cultivo" : fmt0.format(Z().cultivos[x.id].rinde)+" qq · US$ "+fmt0.format(Z().cultivos[x.id].precio)+"/t · "+esc(destNombre(Z().cultivos[x.id].destino).replace("Puerto ",""))+(estadoPrecio(x.id,Z().cultivos[x.id]).tipo==="sin"?" ⚠ precio a confirmar":"");
     const target = x.id;
     return `<button class="row${i===0&&v>0?" best":""}${x.combo?" combo":""}" data-go="${target}">
       <span class="name">${conEmo(x.id,x.nombre)}<small>${sub}</small></span>
@@ -524,7 +537,7 @@ function renderEditor(){
         </label>
         ${c.destino==="otro" ? inputField("km","Distancia al destino (km)",5) : ""}
       </div>
-      <p class="muted" style="font-size:12.5px;margin:6px 0 10px">${precioDest(store.sel,c.destino)!=null ? `Precio informado para ${esc(destNombre(c.destino))}: US$ ${fmt0.format(precioDest(store.sel,c.destino))}/t.` : `<b style="color:var(--accent-ink)">No hay precio informado de ${esc(cropName(store.sel).toLowerCase())} para ${esc(destNombre(c.destino))}: revisá el precio a mano.</b>`} Flete largo calculado: ${fmt0.format(kmDestino(store.zona,c))} km × tarifa de la zona.</p>
+      <p class="muted" style="font-size:12.5px;margin:6px 0 10px"><span id="notaPrecio">${notaPrecio(store.sel,c)}</span> Flete largo calculado: ${fmt0.format(kmDestino(store.zona,c))} km × tarifa de la zona.</p>
       <div class="grid2">
         ${inputField("cosechaPct","Cosecha (% del ingreso)",.5)}
         ${inputField("fleteCorto","Flete corto (US$/t)",1)}
@@ -561,7 +574,7 @@ function renderEditor(){
   root.querySelectorAll("select[data-ks]").forEach(sel=>sel.addEventListener("change",()=>{
     c.destino = sel.value;
     c.fleteLargo = fleteCalc(store.zona,c,Z().tarifa);
-    const p = precioDest(store.sel,c.destino); if(p!=null) c.precio = p;
+    const man=(c.preciosMan||{})[c.destino]; const p = man!=null ? man : precioDest(store.sel,c.destino); if(p!=null) c.precio = p;
     changed(); renderEditor();
   }));
   root.querySelectorAll("input[data-kt]").forEach(inp=>inp.addEventListener("change",()=>{
@@ -571,7 +584,12 @@ function renderEditor(){
   }));
   root.querySelectorAll("input[data-k=km]").forEach(inp=>inp.addEventListener("change",()=>{ c.fleteLargo = fleteCalc(store.zona,c,Z().tarifa); changed(); renderEditor(); }));
   root.querySelectorAll("input[data-kb]").forEach(inp=>inp.addEventListener("change",()=>{ c[inp.dataset.kb]=inp.checked; changed(); renderEditor(); }));
-  root.querySelectorAll("input[data-k]").forEach(inp=>inp.addEventListener("input",()=>{ c[inp.dataset.k]=inp.value===""?0:parseFloat(inp.value); changed(); }));
+  root.querySelectorAll("input[data-k]").forEach(inp=>inp.addEventListener("input",()=>{
+    c[inp.dataset.k]=inp.value===""?0:parseFloat(inp.value);
+    if(inp.dataset.k==="precio"){ c.preciosMan=c.preciosMan||{}; c.preciosMan[c.destino||"quequen"]=c.precio; }
+    changed();
+    const np=document.getElementById("notaPrecio"); if(np) np.innerHTML=notaPrecio(store.sel,c);
+  }));
   root.querySelectorAll("input[data-ci]").forEach(inp=>inp.addEventListener("input",()=>{
     const it=c.costos[+inp.dataset.ci];
     if(inp.dataset.f==="usd") it.usd = inp.value===""?0:parseFloat(inp.value); else it.item = inp.value;
@@ -687,7 +705,8 @@ function renderComp(){
   </tr></thead><tbody>${res.map((x,i)=>{
     const c = x.combo ? null : Z().cultivos[x.id];
     const rinde = x.combo ? x.parts.map(p=>fmt0.format(Z().cultivos[p].rinde)).join(" / ") : fmt0.format(c.rinde);
-    const precio = x.combo ? x.parts.map(p=>fmt0.format(Z().cultivos[p].precio)).join(" / ") : fmt0.format(c.precio);
+    const pm = id => fmt0.format(Z().cultivos[id].precio)+(estadoPrecio(id,Z().cultivos[id]).tipo==="sin"?" ⚠":"");
+    const precio = x.combo ? x.parts.map(pm).join(" / ") : pm(x.id);
     const ri = x.combo ? x.rs.map(r=>isFinite(r.RI)?fmt1.format(r.RI):"—").join(" / ") : (isFinite(x.r.RI)?fmt1.format(x.r.RI):"—");
     return `<tr class="${x.combo?"combo":""}${i===0?" top":""}"><td class="pos">${i+1}</td><td>${conEmo(x.id,x.nombre)}</td><td style="text-align:left">${x.combo ? x.parts.map(p=>esc(destNombre(Z().cultivos[p].destino).replace("Puerto ",""))).join(" / ") : esc(destNombre(Z().cultivos[x.id].destino).replace("Puerto ",""))}</td><td>${rinde}</td><td>${precio}</td><td>${num(x.r.IB)}</td><td>${num(x.r.GC+x.r.cos)}</td><td>${num(x.r.CD)}</td><td class="${x.r.MB<0?"neg":""}"><b>${num(x.r.MB)}</b></td><td>${ri}</td><td>${isFinite(x.r.ret)?pctF.format(x.r.ret):"—"}</td>${arr?`<td class="${x.MN<0?"neg":""}">${num(x.MN)}</td>`:""}</tr>`;
   }).join("")}</tbody>`;
@@ -717,7 +736,7 @@ function resumen(){
   res.forEach(x=>{
     const c = x.combo?null:Z().cultivos[x.id];
     s += `${emo(x.id)} ${x.nombre}: ${usd(x.r.MB)}/ha`;
-    if(!x.combo) s += ` (${fmt0.format(c.rinde)} qq · US$ ${fmt0.format(c.precio)}/t ${destNombre(c.destino).replace("Puerto ","")} · RI ${isFinite(x.r.RI)?fmt1.format(x.r.RI):"—"} qq)`;
+    if(!x.combo) s += ` (${fmt0.format(c.rinde)} qq · US$ ${fmt0.format(c.precio)}/t ${destNombre(c.destino).replace("Puerto ","")}${estadoPrecio(x.id,c).tipo==="sin"?" (precio a confirmar)":""} · RI ${isFinite(x.r.RI)?fmt1.format(x.r.RI):"—"} qq)`;
     if(arr) s += ` → ${usd(x.MN)} con alquiler`;
     s += "\n";
   });
