@@ -259,7 +259,15 @@ const DESTINOS = [
   {id:"quequen", nombre:"Puerto Quequén", grupo:"Puertos"},
   {id:"bahia", nombre:"Puerto Bahía Blanca", grupo:"Puertos"},
   {id:"rosario", nombre:"Up River (Rosario)", grupo:"Puertos"},
+  {id:"sanpedro", nombre:"San Pedro / Ramallo", grupo:"Puertos"},
+  {id:"zarate", nombre:"Zárate / Lima", grupo:"Puertos"},
   {id:"tandil", nombre:"Tandil", grupo:"Plantas y acopios"},
+  {id:"azul", nombre:"Azul", grupo:"Plantas y acopios"},
+  {id:"olavarria", nombre:"Olavarría", grupo:"Plantas y acopios"},
+  {id:"bolivar", nombre:"Bolívar", grupo:"Plantas y acopios"},
+  {id:"belgrano", nombre:"Gral. Belgrano", grupo:"Plantas y acopios"},
+  {id:"chascomus", nombre:"Chascomús", grupo:"Plantas y acopios"},
+  {id:"canuelas", nombre:"Cañuelas", grupo:"Plantas y acopios"},
   {id:"sanmanuel", nombre:"San Manuel", grupo:"Plantas y acopios"},
   {id:"tresarroyos", nombre:"Tres Arroyos", grupo:"Plantas y acopios"},
   {id:"daireaux", nombre:"Daireaux", grupo:"Plantas y acopios"},
@@ -269,16 +277,17 @@ const DESTINOS = [
   {id:"guamini", nombre:"Guaminí", grupo:"Plantas y acopios"},
   {id:"junin", nombre:"Junín", grupo:"Plantas y acopios"},
   {id:"smmonte", nombre:"San Miguel del Monte", grupo:"Plantas y acopios"},
+  {id:"consumo", nombre:"Consumo local (feedlot / tambo)", grupo:"Consumo"},
   {id:"otro", nombre:"Otro destino (cargar km)", grupo:"Otro"}
 ];
 const destNombre = id => (DESTINOS.find(d=>d.id===id)||{nombre:"Puerto Quequén"}).nombre.replace(" (cargar km)","");
 // km aproximados por ruta desde cada sucursal
 const KM = {
-  "Tandil":        {quequen:180,bahia:395,rosario:630,tresarroyos:195,daireaux:310,junin:430,sanmanuel:70, tandil:0,  smmonte:265,pehuajo:375,casares:345,guamini:365,madero:385},
-  "Azul":          {quequen:280,bahia:380,rosario:540,tresarroyos:225,daireaux:210,junin:330,sanmanuel:180,tandil:110,smmonte:220,pehuajo:265,casares:235,guamini:285,madero:280},
-  "Olavarría":     {quequen:295,bahia:330,rosario:550,tresarroyos:205,daireaux:165,junin:325,sanmanuel:205,tandil:145,smmonte:265,pehuajo:230,casares:210,guamini:235,madero:240},
-  "Bolívar":       {quequen:420,bahia:370,rosario:460,tresarroyos:315,daireaux:90, junin:230,sanmanuel:330,tandil:265,smmonte:280,pehuajo:105,casares:90, guamini:180,madero:120},
-  "Gral. Belgrano":{quequen:390,bahia:585,rosario:465,tresarroyos:415,daireaux:380,junin:325,sanmanuel:285,tandil:225,smmonte:60, pehuajo:385,casares:325,guamini:470,madero:405}
+  "Tandil":        {quequen:180,bahia:395,rosario:630,tresarroyos:195,daireaux:310,junin:430,sanmanuel:70, tandil:0,  smmonte:265,pehuajo:375,casares:345,guamini:365,madero:385,zarate:450,sanpedro:510,chascomus:270,canuelas:320,azul:110,olavarria:145,bolivar:265,belgrano:225,consumo:30},
+  "Azul":          {quequen:280,bahia:380,rosario:540,tresarroyos:225,daireaux:210,junin:330,sanmanuel:180,tandil:110,smmonte:220,pehuajo:265,casares:235,guamini:285,madero:280,zarate:385,sanpedro:430,chascomus:265,canuelas:270,azul:0,olavarria:55,bolivar:160,belgrano:205,consumo:30},
+  "Olavarría":     {quequen:295,bahia:330,rosario:550,tresarroyos:205,daireaux:165,junin:325,sanmanuel:205,tandil:145,smmonte:265,pehuajo:230,casares:210,guamini:235,madero:240,zarate:415,sanpedro:450,chascomus:315,canuelas:310,azul:55,olavarria:0,bolivar:125,belgrano:255,consumo:30},
+  "Bolívar":       {quequen:420,bahia:370,rosario:460,tresarroyos:315,daireaux:90, junin:230,sanmanuel:330,tandil:265,smmonte:280,pehuajo:105,casares:90, guamini:180,madero:120,zarate:380,sanpedro:390,chascomus:360,canuelas:310,azul:160,olavarria:125,bolivar:0,belgrano:300,consumo:30},
+  "Gral. Belgrano":{quequen:390,bahia:585,rosario:465,tresarroyos:415,daireaux:380,junin:325,sanmanuel:285,tandil:225,smmonte:60, pehuajo:385,casares:325,guamini:470,madero:405,zarate:240,sanpedro:320,chascomus:60,canuelas:105,azul:205,olavarria:255,bolivar:300,belgrano:0,consumo:30}
 };
 const TARIFA_DEF = {fijo:4, c100:8};
 function kmDestino(zona,c){ return c.destino==="otro" ? n(c.km) : ((KM[zona]||{})[c.destino||"quequen"] ?? 0); }
@@ -533,7 +542,7 @@ function renderEditor(){
       <div class="sec-head"><h3>Cosecha y comercialización</h3></div>
       <div class="grid2">
         <label class="field" style="grid-column:1/-1">Destino de entrega
-          <select data-ks="destino">${["Puertos","Plantas y acopios","Otro"].map(g=>`<optgroup label="${g}">${DESTINOS.filter(d=>d.grupo===g).map(d=>`<option value="${d.id}" ${d.id===(c.destino||"quequen")?"selected":""}>${d.nombre}${d.id!=="otro"?` · ${fmt0.format((KM[store.zona]||{})[d.id]||0)} km`:""}</option>`).join("")}</optgroup>`).join("")}</select>
+          <select data-ks="destino">${["Puertos","Plantas y acopios","Consumo","Otro"].map(g=>`<optgroup label="${g}">${DESTINOS.filter(d=>d.grupo===g).map(d=>`<option value="${d.id}" ${d.id===(c.destino||"quequen")?"selected":""}>${d.nombre}${d.id!=="otro"?` · ${fmt0.format((KM[store.zona]||{})[d.id]||0)} km`:""}</option>`).join("")}</optgroup>`).join("")}</select>
         </label>
         ${c.destino==="otro" ? inputField("km","Distancia al destino (km)",5) : ""}
       </div>
