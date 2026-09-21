@@ -233,8 +233,8 @@ const ZONAS = {
 
 // Precio de referencia a cosecha USD/t (editar con el Matba-Rofex del día)
 const PRECIO = {maiz:210, soja1:355, soja2:355, girasol:440, trigo:230, cebada:220};
-const PRECIOS_FECHA = "21/09/2026";
-const PRECIOS_FUENTE = "mesa de granos RyCDAS, Quequén";
+let PRECIOS_FECHA = "21/09/2026";
+let PRECIOS_FUENTE = "mesa de granos RyCDAS, Quequén";
 const SECADA = {maiz:10, soja1:0, soja2:0, girasol:3, trigo:0, cebada:0};
 
 const COSTOS = {
@@ -274,12 +274,14 @@ try{
   }
 }catch(e){}
 if(!ZONAS[store.zona]) store.zona = "Tandil";
-let preciosActualizados = false;
-if(store.preciosFecha !== PRECIOS_FECHA){
+function sincronizarPrecios(){
+  if(store.preciosFecha === PRECIOS_FECHA) return false;
   Object.values(store.zonas).forEach(z=>{ if(z && z.cultivos) CROPS.forEach(c=>{ if(z.cultivos[c.id]) z.cultivos[c.id].precio = PRECIO[c.id]; }); });
-  if(store.preciosFecha) preciosActualizados = true;
+  const habia = !!store.preciosFecha;
   store.preciosFecha = PRECIOS_FECHA;
+  return habia;
 }
+let preciosActualizados = sincronizarPrecios();
 function Z(){ if(!store.zonas[store.zona]) store.zonas[store.zona] = defaultZona(store.zona); return store.zonas[store.zona]; }
 function save(){ try{ localStorage.setItem(STORE_KEY, JSON.stringify(store)); }catch(e){} }
 
@@ -542,6 +544,23 @@ $("btnReset").onclick = ()=>{
 save();
 renderAll();
 if(preciosActualizados) toast("Precios actualizados al "+PRECIOS_FECHA);
+
+// Precios del día desde precios.json (se actualiza en el repo sin tocar la página)
+let ultimoJson = "";
+function cargarPrecios(){
+  fetch("precios.json?t="+Date.now(),{cache:"no-store"}).then(r=>r.ok?r.json():null).then(j=>{
+    if(!j || !j.fecha || !j.precios) return;
+    const firma = JSON.stringify(j); if(firma===ultimoJson) return; ultimoJson = firma;
+    CROPS.forEach(c=>{ const p=j.precios[c.id]; if(p && isFinite(parseFloat(p.precio))){ PRECIO[c.id]=parseFloat(p.precio); if(p.posicion) c.ref=p.posicion; } });
+    PRECIOS_FECHA = j.fecha; if(j.fuente) PRECIOS_FUENTE = j.fuente;
+    const cambio = sincronizarPrecios();
+    save(); renderAll();
+    if(cambio) toast("Precios actualizados al "+PRECIOS_FECHA);
+  }).catch(()=>{});
+}
+cargarPrecios();
+setInterval(cargarPrecios, 5*60*1000);
+document.addEventListener("visibilitychange",()=>{ if(!document.hidden) cargarPrecios(); });
 if(location.hash.startsWith("#s=")) toast("Escenario compartido cargado");
 })();
 </script>
