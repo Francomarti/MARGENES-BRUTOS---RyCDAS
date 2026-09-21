@@ -267,7 +267,7 @@ function defaultZona(z){
   CROPS.forEach(cr=>{
     c[cr.id] = {
       rinde:Z.rinde[cr.id], precio:PRECIO[cr.id],
-      fleteCorto:8, fleteLargo:Z.flete, secada:SECADA[cr.id],
+      fleteCorto:8, fleteLargo:Z.flete, secada:SECADA[cr.id], paritaria:0,
       comision:2, otrosPct:1, cosechaPct:8,
       costos:COSTOS[cr.id].map(([cat,item,usd])=>({cat,item,usd}))
     };
@@ -314,7 +314,7 @@ function calc(c, override, opts){
   const t = n(r.rinde)/10, p = n(r.precio);
   const IB = t*p;
   const pct = (n(r.comision)+n(r.otrosPct))/100;
-  const porT = n(r.fleteCorto)+n(r.fleteLargo)+n(r.secada);
+  const porT = n(r.fleteCorto)+n(r.fleteLargo)+n(r.secada)+n(r.paritaria);
   const GC = IB*pct + t*porT;
   const cos = IB*n(r.cosechaPct)/100;
   const IN = IB - GC - cos;
@@ -398,7 +398,7 @@ function renderTabs(){
 
 function inputField(key,label,step){
   const c = Z().cultivos[store.sel];
-  return `<label class="field">${label}<input type="number" inputmode="decimal" step="${step||1}" data-k="${key}" value="${c[key]}"></label>`;
+  return `<label class="field">${label}<input type="number" inputmode="decimal" step="${step||1}" data-k="${key}" value="${c[key]==null?0:c[key]}"></label>`;
 }
 
 function renderEditor(){
@@ -423,6 +423,7 @@ function renderEditor(){
         ${inputField("fleteCorto","Flete corto (US$/t)",1)}
         ${inputField("fleteLargo","Flete largo (US$/t)",1)}
         ${inputField("secada","Secada / acondic. (US$/t)",1)}
+        ${inputField("paritaria","Paritaria (US$/t)",.1)}
         ${inputField("comision","Comisión acopio (%)",.5)}
         ${inputField("otrosPct","Sellado y otros (%)",.5)}
       </div>
