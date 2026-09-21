@@ -257,13 +257,13 @@ const SECADA = {maiz:10, soja1:0, soja2:0, girasol:3, trigo:0, cebada:0, cervece
 
 const COSTOS = {
   maiz:[["Semilla","Híbrido (1 bolsa/ha)",190],["Fertilización","Urea 200 kg",120],["Fertilización","MAP 100 kg",80],["Protección","Herbicidas",70],["Protección","Insecticida / fungicida",25],["Labores","Siembra",60],["Labores","Pulverizaciones (3)",30],["Labores","Fertilizaciones (2)",24],["Otros","Seguro",15]],
-  soja1:[["Semilla","Semilla 80 kg",72],["Semilla","Inoculante + curasemilla",12],["Fertilización","Fosforado",40],["Protección","Herbicidas",80],["Protección","Insecticida / fungicida",35],["Labores","Siembra",60],["Labores","Pulverizaciones (4)",40],["Otros","Seguro",10]],
+  soja1:[["Semilla","Semilla 80 kg",72],["Semilla","Inoculante + curasemilla",12],["Fertilización","Fosforado",40],["Fertilización","Boro foliar",8],["Protección","Herbicidas",80],["Protección","Insecticida / fungicida",35],["Labores","Siembra",60],["Labores","Pulverizaciones (4)",40],["Otros","Seguro",10]],
   soja2:[["Semilla","Semilla 90 kg",81],["Semilla","Inoculante + curasemilla",10],["Protección","Herbicidas",50],["Protección","Insecticida / fungicida",25],["Labores","Siembra",60],["Labores","Pulverizaciones (3)",30],["Otros","Seguro",8]],
-  girasol:[["Semilla","Híbrido 55.000 sem/ha",95],["Fertilización","MAP 70 kg",56],["Fertilización","Urea 50 kg",30],["Protección","Herbicidas",70],["Protección","Insecticida / fungicida",25],["Labores","Siembra",60],["Labores","Pulverizaciones (3)",30],["Labores","Fertilización",12],["Otros","Seguro",12]],
-  trigo:[["Semilla","Semilla 130 kg",65],["Semilla","Curasemilla",10],["Fertilización","Urea 200 kg",120],["Fertilización","MAP 100 kg",80],["Protección","Herbicidas",45],["Protección","Fungicida",45],["Labores","Siembra",60],["Labores","Pulverizaciones (3)",30],["Labores","Fertilizaciones (2)",24],["Otros","Seguro",15]],
+  girasol:[["Semilla","Híbrido 55.000 sem/ha",95],["Fertilización","MAP 70 kg",56],["Fertilización","Urea 50 kg",30],["Fertilización","Boro foliar",12],["Protección","Herbicidas",70],["Protección","Insecticida / fungicida",25],["Labores","Siembra",60],["Labores","Pulverizaciones (3)",30],["Labores","Fertilización",12],["Otros","Seguro",12]],
+  trigo:[["Semilla","Semilla 130 kg",65],["Semilla","Curasemilla",10],["Fertilización","Urea 200 kg",120],["Fertilización","MAP 100 kg",80],["Fertilización","Azufre (yeso 100 kg)",25],["Protección","Herbicidas",45],["Protección","Fungicida",45],["Labores","Siembra",60],["Labores","Pulverizaciones (3)",30],["Labores","Fertilizaciones (2)",24],["Otros","Seguro",15]],
   arveja:[["Semilla","Semilla 200 kg",90],["Semilla","Inoculante + curasemilla",12],["Fertilización","Fosforado",40],["Protección","Herbicidas",50],["Protección","Insecticida / fungicida",35],["Labores","Siembra",60],["Labores","Pulverizaciones (3)",30],["Otros","Seguro",10]],
-  cervecera:[["Semilla","Semilla fiscalizada 120 kg",66],["Semilla","Curasemilla",10],["Fertilización","Urea 140 kg",84],["Fertilización","MAP 90 kg",72],["Protección","Herbicidas",45],["Protección","Fungicidas (2)",55],["Labores","Siembra",60],["Labores","Pulverizaciones (3)",30],["Labores","Fertilizaciones (2)",24],["Otros","Seguro",15]],
-  cebada:[["Semilla","Semilla 120 kg",54],["Semilla","Curasemilla",10],["Fertilización","Urea 180 kg",108],["Fertilización","MAP 90 kg",72],["Protección","Herbicidas",45],["Protección","Fungicida",40],["Labores","Siembra",60],["Labores","Pulverizaciones (3)",30],["Labores","Fertilizaciones (2)",24],["Otros","Seguro",15]]
+  cervecera:[["Semilla","Semilla fiscalizada 120 kg",66],["Semilla","Curasemilla",10],["Fertilización","Urea 140 kg",84],["Fertilización","MAP 90 kg",72],["Fertilización","Azufre (yeso 100 kg)",25],["Protección","Herbicidas",45],["Protección","Fungicidas (2)",55],["Labores","Siembra",60],["Labores","Pulverizaciones (3)",30],["Labores","Fertilizaciones (2)",24],["Otros","Seguro",15]],
+  cebada:[["Semilla","Semilla 120 kg",54],["Semilla","Curasemilla",10],["Fertilización","Urea 180 kg",108],["Fertilización","MAP 90 kg",72],["Fertilización","Azufre (yeso 100 kg)",25],["Protección","Herbicidas",45],["Protección","Fungicida",40],["Labores","Siembra",60],["Labores","Pulverizaciones (3)",30],["Labores","Fertilizaciones (2)",24],["Otros","Seguro",15]]
 };
 
 const EXTRAS = {
@@ -316,6 +316,14 @@ if(!store.fertV){
     for(const id in CAMBIOS){ const c=z.cultivos[id]; if(!c) continue;
       CAMBIOS[id].forEach(([viejo,usdV,nuevo,usdN])=>{ const it=c.costos.find(x=>x.item===viejo && n(x.usd)===usdV); if(it){ it.item=nuevo; it.usd=usdN; } }); } });
   store.fertV = 1;
+}
+if(!store.zonas || !Object.keys(store.zonas).length) store.fertV = 2;
+if(store.fertV===1){
+  const AGREGAR = {girasol:[["Boro foliar",12]], soja1:[["Boro foliar",8]], trigo:[["Azufre (yeso 100 kg)",25]], cebada:[["Azufre (yeso 100 kg)",25]], cervecera:[["Azufre (yeso 100 kg)",25]]};
+  Object.values(store.zonas).forEach(z=>{ if(!z || !z.cultivos) return;
+    for(const id in AGREGAR){ const c=z.cultivos[id]; if(!c) continue;
+      AGREGAR[id].forEach(([item,usd])=>{ if(!c.costos.some(x=>x.item===item)){ let i=-1; c.costos.forEach((x,k)=>{ if(x.cat==="Fertilización") i=k; }); c.costos.splice(i+1,0,{cat:"Fertilización",item,usd}); } }); } });
+  store.fertV = 2;
 }
 if(!store.paritariaV){
   Object.values(store.zonas).forEach(z=>{ if(z && z.cultivos) Object.values(z.cultivos).forEach(c=>{ if(!c.paritaria) c.paritaria = 4; }); });
