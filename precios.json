@@ -36,6 +36,11 @@
       "precio": 280,
       "posicion": "Dic/Ene-27",
       "origen": "Valor de referencia, a confirmar con la mesa de granos"
+    },
+    "cervecera": {
+      "precio": 245,
+      "posicion": "Ene/Mar-27",
+      "origen": "Bruno 18/09 - Cervecera Quequén ene/mar 245 (base forrajera 210)"
     }
   }
 }
