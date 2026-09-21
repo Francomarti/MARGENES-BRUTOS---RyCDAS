@@ -265,6 +265,13 @@ const COSTOS = {
   cebada:[["Semilla","Semilla 120 kg",54],["Semilla","Curasemilla",10],["Fertilización","Urea 180 kg",108],["Fertilización","MAP 90 kg",72],["Protección","Herbicidas",45],["Protección","Fungicida",40],["Labores","Siembra",60],["Labores","Pulverizaciones (3)",30],["Labores","Fertilizaciones (2)",24],["Otros","Seguro",15]]
 };
 
+const EXTRAS = {
+  girasol:{mg:42, oleico:false, bonifOleico:0},
+  cervecera:{noCalifica:0, precioBase:210}
+};
+function aplicarExtras(cultivos){
+  for(const id in EXTRAS){ const c=cultivos[id]; if(!c) continue; for(const k in EXTRAS[id]) if(c[k]==null) c[k]=EXTRAS[id][k]; }
+}
 function defaultZona(z){
   const Z = ZONAS[z]; const c = {};
   CROPS.forEach(cr=>{
@@ -275,6 +282,7 @@ function defaultZona(z){
       costos:COSTOS[cr.id].map(([cat,item,usd])=>({cat,item,usd}))
     };
   });
+  aplicarExtras(c);
   return {arrQQ:Z.arr, arrOn:false, cultivos:c};
 }
 
@@ -309,6 +317,7 @@ function Z(){
   if(!store.zonas[store.zona]) store.zonas[store.zona] = defaultZona(store.zona);
   const z = store.zonas[store.zona];
   if(CROPS.some(c=>!z.cultivos[c.id])){ const d = defaultZona(store.zona); CROPS.forEach(c=>{ if(!z.cultivos[c.id]) z.cultivos[c.id] = d.cultivos[c.id]; }); }
+  aplicarExtras(z.cultivos);
   return z;
 }
 const isCombo = id => COMBOS.some(cb=>cb.id===id);
@@ -318,7 +327,10 @@ function save(){ try{ localStorage.setItem(STORE_KEY, JSON.stringify(store)); }c
 function n(v){ v = parseFloat(v); return isFinite(v) ? v : 0; }
 function calc(c, override, opts){
   const r = Object.assign({}, c, override||{});
-  const t = n(r.rinde)/10, p = n(r.precio);
+  const t = n(r.rinde)/10;
+  let p = n(r.precio);
+  if(r.mg!=null) p = p*(1 + 0.02*(n(r.mg)-42)) + (r.oleico ? n(r.bonifOleico) : 0);
+  if(r.noCalifica!=null){ const nc = Math.min(100,Math.max(0,n(r.noCalifica)))/100; p = p*(1-nc) + n(r.precioBase)*nc; }
   const IB = t*p;
   const pct = (n(r.comision)+n(r.otrosPct))/100;
   const porT = n(r.fleteCorto)+n(r.fleteLargo)+n(r.secada)+n(r.paritaria);
@@ -331,7 +343,7 @@ function calc(c, override, opts){
   const alq = (opts && opts.sinAlq) ? 0 : arrUSD();
   const RI = netT>0 ? (CD+alq)/netT*10 : NaN;
   const tot = CD+GC+cos;
-  return {IB,GC,cos,IN,CD,MB,RI,ret: tot>0? MB/tot : NaN, tot, netT};
+  return {IB,GC,cos,IN,CD,MB,RI,ret: tot>0? MB/tot : NaN, tot, netT, pEf:p};
 }
 function tenBadge(){ return Z().arrOn ? `<span class="badge">Campo alquilado · ${fmt1.format(n(Z().arrQQ))} qq</span>` : `<span class="badge propio">Campo propio</span>`; }
 function arrUSD(){ const z=Z(); return z.arrOn ? n(z.arrQQ)/10*n(z.cultivos.soja1.precio) : 0; }
@@ -421,7 +433,12 @@ function renderEditor(){
       <div class="grid2">
         ${inputField("rinde","Rinde (qq/ha)",1)}
         ${inputField("precio","Precio a cosecha "+cr.ref+" (US$/t)",1)}
+        ${c.noCalifica!=null ? inputField("noCalifica","No califica como maltera (%)",5) + inputField("precioBase","Precio base forrajera (US$/t)",1) : ""}
+        ${c.mg!=null ? inputField("mg","Materia grasa (%) · base 42",.5) : ""}
       </div>
+      ${c.mg!=null ? `<label class="check" style="margin-top:8px"><input type="checkbox" data-kb="oleico" ${c.oleico?"checked":""}> Girasol alto oleico</label>
+      ${c.oleico ? `<div class="grid2">${inputField("bonifOleico","Bonificación oleico (US$/t)",1)}</div>` : ""}
+      <p class="muted" style="font-size:12.5px;margin-top:6px">Bonificación por materia grasa: +2% del precio por cada punto arriba de 42% (−2% por punto abajo).</p>` : ""}
     </div>
     <div class="sec">
       <div class="sec-head"><h3>Cosecha y comercialización</h3></div>
@@ -431,7 +448,7 @@ function renderEditor(){
         ${inputField("fleteLargo","Flete largo (US$/t)",1)}
         ${inputField("secada","Secada / acondic. (US$/t)",1)}
         ${inputField("paritaria","Paritaria (US$/t)",.1)}
-        ${inputField("comision","Comisión acopio (%)",.5)}
+        ${inputField("comision","Comisión de venta / acopio (%)",.5)}
         ${inputField("otrosPct","Sellado y otros (%)",.5)}
       </div>
     </div>
@@ -451,6 +468,7 @@ function renderEditor(){
       }).join("")}
     </div>`;
   const root = $("inputs");
+  root.querySelectorAll("input[data-kb]").forEach(inp=>inp.addEventListener("change",()=>{ c[inp.dataset.kb]=inp.checked; changed(); renderEditor(); }));
   root.querySelectorAll("input[data-k]").forEach(inp=>inp.addEventListener("input",()=>{ c[inp.dataset.k]=inp.value===""?0:parseFloat(inp.value); changed(); }));
   root.querySelectorAll("input[data-ci]").forEach(inp=>inp.addEventListener("input",()=>{
     const it=c.costos[+inp.dataset.ci];
@@ -528,6 +546,7 @@ function renderResults(){
     <h3 style="margin-bottom:8px">${cropName(store.sel)} · ${esc(store.zona)}${tenBadge()}</h3>
     <div class="result-big"><span class="v num ${r.MB<0?"neg":""}">${usd(r.MB)}</span><span class="u">margen bruto por ha</span></div>
     <table class="lines">
+      ${Math.abs(r.pEf-n(c.precio))>0.01?`<tr class="sub"><td>Precio efectivo (con ${c.mg!=null?"bonificaciones":"mezcla maltera/forrajera"})</td><td>US$ ${fmt1.format(r.pEf)}/t</td></tr>`:""}
       <tr><td>Ingreso bruto</td><td>${usd(r.IB)}</td></tr>
       <tr class="sub"><td>Comercialización</td><td>−${num(r.GC)}</td></tr>
       <tr class="sub"><td>Cosecha</td><td>−${num(r.cos)}</td></tr>
