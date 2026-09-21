@@ -336,7 +336,7 @@ function Z(){
   aplicarExtras(z.cultivos);
   return z;
 }
-const EMO = {maiz:"🌽", soja1:"🌱", soja2:"🌱", girasol:"🌻", trigo:"🍞", cebada:"🌾", cervecera:"🍺", arveja:"🟢"};
+const EMO = {maiz:"🌽", soja1:"🌱", soja2:"🌱", girasol:"🌻", trigo:"🥖", cebada:"🌾", cervecera:"🍺", arveja:"🫛"};
 const emo = id => { const cb = COMBOS.find(x=>x.id===id); return cb ? cb.parts.map(p=>EMO[p]).join("") : (EMO[id]||""); };
 const conEmo = (id,nombre) => `<span class="emo" aria-hidden="true">${emo(id)}</span> ${esc(nombre)}`;
 const isCombo = id => COMBOS.some(cb=>cb.id===id);
