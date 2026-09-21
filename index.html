@@ -147,6 +147,7 @@ table{border-collapse:collapse;width:100%}
 .comp th:first-child,.comp td:first-child{text-align:left}
 .comp tbody tr:hover{background:var(--surface)}
 .comp tr.combo td:nth-child(2){font-style:italic}
+.comp td:nth-child(3){text-align:left;font-size:13px;color:var(--muted);white-space:nowrap}
 .comp th.pos,.comp td.pos{text-align:center;width:36px;padding-left:4px;padding-right:4px}
 .comp td.pos{font-family:var(--serif);font-weight:600;color:var(--muted)}
 .comp tr.top td{background:color-mix(in srgb,var(--accent) 12%,transparent)}
@@ -254,6 +255,34 @@ const COMBOS = [
 const CATS = ["Semilla","Fertilización","Protección","Labores","Otros"];
 
 // Rinde (qq/ha), flete largo (USD/t) y arrendamiento (qq soja/ha) por zona
+const DESTINOS = [
+  {id:"quequen", nombre:"Puerto Quequén", grupo:"Puertos"},
+  {id:"bahia", nombre:"Puerto Bahía Blanca", grupo:"Puertos"},
+  {id:"rosario", nombre:"Up River (Rosario)", grupo:"Puertos"},
+  {id:"tandil", nombre:"Tandil", grupo:"Plantas y acopios"},
+  {id:"sanmanuel", nombre:"San Manuel", grupo:"Plantas y acopios"},
+  {id:"tresarroyos", nombre:"Tres Arroyos", grupo:"Plantas y acopios"},
+  {id:"daireaux", nombre:"Daireaux", grupo:"Plantas y acopios"},
+  {id:"casares", nombre:"Carlos Casares", grupo:"Plantas y acopios"},
+  {id:"pehuajo", nombre:"Pehuajó", grupo:"Plantas y acopios"},
+  {id:"madero", nombre:"Francisco Madero", grupo:"Plantas y acopios"},
+  {id:"guamini", nombre:"Guaminí", grupo:"Plantas y acopios"},
+  {id:"junin", nombre:"Junín", grupo:"Plantas y acopios"},
+  {id:"smmonte", nombre:"San Miguel del Monte", grupo:"Plantas y acopios"},
+  {id:"otro", nombre:"Otro destino (cargar km)", grupo:"Otro"}
+];
+const destNombre = id => (DESTINOS.find(d=>d.id===id)||{nombre:"Puerto Quequén"}).nombre.replace(" (cargar km)","");
+// km aproximados por ruta desde cada sucursal
+const KM = {
+  "Tandil":        {quequen:180,bahia:395,rosario:630,tresarroyos:195,daireaux:310,junin:430,sanmanuel:70, tandil:0,  smmonte:265,pehuajo:375,casares:345,guamini:365,madero:385},
+  "Azul":          {quequen:280,bahia:380,rosario:540,tresarroyos:225,daireaux:210,junin:330,sanmanuel:180,tandil:110,smmonte:220,pehuajo:265,casares:235,guamini:285,madero:280},
+  "Olavarría":     {quequen:295,bahia:330,rosario:550,tresarroyos:205,daireaux:165,junin:325,sanmanuel:205,tandil:145,smmonte:265,pehuajo:230,casares:210,guamini:235,madero:240},
+  "Bolívar":       {quequen:420,bahia:370,rosario:460,tresarroyos:315,daireaux:90, junin:230,sanmanuel:330,tandil:265,smmonte:280,pehuajo:105,casares:90, guamini:180,madero:120},
+  "Gral. Belgrano":{quequen:390,bahia:585,rosario:465,tresarroyos:415,daireaux:380,junin:325,sanmanuel:285,tandil:225,smmonte:60, pehuajo:385,casares:325,guamini:470,madero:405}
+};
+const TARIFA_DEF = {fijo:4, c100:8};
+function kmDestino(zona,c){ return c.destino==="otro" ? n(c.km) : ((KM[zona]||{})[c.destino||"quequen"] ?? 0); }
+function fleteCalc(zona,c,tarifa){ const km=kmDestino(zona,c); const t=tarifa||TARIFA_DEF; return km<=0 ? 0 : Math.round((n(t.fijo)+n(t.c100)*km/100)*2)/2; }
 const ZONAS = {
   "Tandil":        {flete:18, arr:11, rinde:{maiz:85,soja1:32,soja2:18,girasol:26,trigo:55,cebada:55,cervecera:55,arveja:30}},
   "Azul":          {flete:24, arr:10, rinde:{maiz:80,soja1:30,soja2:17,girasol:24,trigo:48,cebada:50,cervecera:50,arveja:28}},
@@ -264,8 +293,19 @@ const ZONAS = {
 
 // Precio de referencia a cosecha USD/t (editar con el Matba-Rofex del día)
 const PRECIO = {maiz:210, soja1:355, soja2:355, girasol:440, trigo:230, cebada:220, cervecera:245, arveja:280};
+const PRECIOS_DEST = {
+  maiz:{quequen:210, bahia:210},
+  soja1:{quequen:355, bahia:355},
+  soja2:{quequen:355, bahia:355},
+  girasol:{quequen:440, bahia:440, daireaux:440, tresarroyos:430, junin:450, tandil:420, sanmanuel:420, smmonte:420, madero:420},
+  trigo:{quequen:230, bahia:230},
+  cebada:{quequen:220, bahia:220},
+  cervecera:{quequen:245, bahia:240, rosario:235},
+  arveja:{quequen:280}
+};
+const precioDest = (id,dest) => { const t=PRECIOS_DEST[id]; return t && t[dest||"quequen"]!=null ? t[dest||"quequen"] : null; };
 let PRECIOS_FECHA = "21/09/2026";
-let PRECIOS_FUENTE = "mesa de granos RyCDAS, Quequén";
+let PRECIOS_FUENTE = "mesa de granos RyCDAS, según destino";
 const SECADA = {maiz:10, soja1:0, soja2:0, girasol:3, trigo:0, cebada:0, cervecera:0, arveja:0};
 
 const COSTOS = {
@@ -291,13 +331,13 @@ function defaultZona(z){
   CROPS.forEach(cr=>{
     c[cr.id] = {
       rinde:Z.rinde[cr.id], precio:PRECIO[cr.id],
-      fleteCorto:8, fleteLargo:Z.flete, secada:SECADA[cr.id], paritaria:4,
+      fleteCorto:8, fleteLargo:fleteCalc(z,{destino:"quequen"}), destino:"quequen", secada:SECADA[cr.id], paritaria:4,
       comision:2, otrosPct:1, cosechaPct:8,
       costos:COSTOS[cr.id].map(([cat,item,usd])=>({cat,item,usd}))
     };
   });
   aplicarExtras(c);
-  return {arrQQ:Z.arr, arrOn:false, cultivos:c};
+  return {arrQQ:Z.arr, arrOn:false, tarifa:Object.assign({},TARIFA_DEF), cultivos:c};
 }
 
 // ---------- state ----------
@@ -317,7 +357,7 @@ try{
 if(!ZONAS[store.zona]) store.zona = "Tandil";
 function sincronizarPrecios(){
   if(store.preciosFecha === PRECIOS_FECHA) return false;
-  Object.values(store.zonas).forEach(z=>{ if(z && z.cultivos) CROPS.forEach(c=>{ if(z.cultivos[c.id]) z.cultivos[c.id].precio = PRECIO[c.id]; }); });
+  Object.values(store.zonas).forEach(z=>{ if(z && z.cultivos) CROPS.forEach(c=>{ const cc=z.cultivos[c.id]; if(!cc) return; const p=precioDest(c.id,cc.destino); if(p!=null) cc.precio=p; }); });
   const habia = !!store.preciosFecha;
   store.preciosFecha = PRECIOS_FECHA;
   return habia;
@@ -347,6 +387,8 @@ function Z(){
   const z = store.zonas[store.zona];
   if(CROPS.some(c=>!z.cultivos[c.id])){ const d = defaultZona(store.zona); CROPS.forEach(c=>{ if(!z.cultivos[c.id]) z.cultivos[c.id] = d.cultivos[c.id]; }); }
   aplicarExtras(z.cultivos);
+  if(!z.tarifa) z.tarifa = Object.assign({},TARIFA_DEF);
+  Object.values(z.cultivos).forEach(c=>{ if(!c.destino) c.destino="quequen"; });
   return z;
 }
 const EMO = {maiz:"🌽", soja1:"🌱", soja2:"🌱", girasol:"🌻", trigo:"🥖", cebada:"🌾", cervecera:"🍺", arveja:"🟢"};
@@ -433,7 +475,7 @@ function renderRank(){
     const v = val(x);
     const w = Math.abs(v)/span*100;
     const left = v>=0 ? zeroPct : zeroPct - w;
-    const sub = x.combo ? "doble cultivo" : fmt0.format(Z().cultivos[x.id].rinde)+" qq · US$ "+fmt0.format(Z().cultivos[x.id].precio)+"/t";
+    const sub = x.combo ? "doble cultivo" : fmt0.format(Z().cultivos[x.id].rinde)+" qq · US$ "+fmt0.format(Z().cultivos[x.id].precio)+"/t · "+esc(destNombre(Z().cultivos[x.id].destino).replace("Puerto ",""));
     const target = x.id;
     return `<button class="row${i===0&&v>0?" best":""}${x.combo?" combo":""}" data-go="${target}">
       <span class="name">${conEmo(x.id,x.nombre)}<small>${sub}</small></span>
@@ -466,7 +508,7 @@ function renderEditor(){
       <div class="sec-head"><h3>Rinde y precio</h3></div>
       <div class="grid2">
         ${inputField("rinde","Rinde (qq/ha)",1)}
-        ${inputField("precio","Precio a cosecha "+cr.ref+" (US$/t)",1)}
+        ${inputField("precio","Precio a cosecha "+cr.ref+" · "+destNombre(c.destino)+" (US$/t)",1)}
         ${c.noCalifica!=null ? inputField("noCalifica","No califica como maltera (%)",5) + inputField("precioBase","Precio base forrajera (US$/t)",1) : ""}
         ${c.mg!=null ? inputField("mg","Materia grasa (%) · base 42",.5) : ""}
       </div>
@@ -477,13 +519,27 @@ function renderEditor(){
     <div class="sec">
       <div class="sec-head"><h3>Cosecha y comercialización</h3></div>
       <div class="grid2">
+        <label class="field" style="grid-column:1/-1">Destino de entrega
+          <select data-ks="destino">${["Puertos","Plantas y acopios","Otro"].map(g=>`<optgroup label="${g}">${DESTINOS.filter(d=>d.grupo===g).map(d=>`<option value="${d.id}" ${d.id===(c.destino||"quequen")?"selected":""}>${d.nombre}${d.id!=="otro"?` · ${fmt0.format((KM[store.zona]||{})[d.id]||0)} km`:""}</option>`).join("")}</optgroup>`).join("")}</select>
+        </label>
+        ${c.destino==="otro" ? inputField("km","Distancia al destino (km)",5) : ""}
+      </div>
+      <p class="muted" style="font-size:12.5px;margin:6px 0 10px">${precioDest(store.sel,c.destino)!=null ? `Precio informado para ${esc(destNombre(c.destino))}: US$ ${fmt0.format(precioDest(store.sel,c.destino))}/t.` : `<b style="color:var(--accent-ink)">No hay precio informado de ${esc(cropName(store.sel).toLowerCase())} para ${esc(destNombre(c.destino))}: revisá el precio a mano.</b>`} Flete largo calculado: ${fmt0.format(kmDestino(store.zona,c))} km × tarifa de la zona.</p>
+      <div class="grid2">
         ${inputField("cosechaPct","Cosecha (% del ingreso)",.5)}
         ${inputField("fleteCorto","Flete corto (US$/t)",1)}
-        ${inputField("fleteLargo","Flete largo (US$/t)",1)}
+        ${inputField("fleteLargo","Flete largo (US$/t)",.5)}
         ${inputField("secada","Secada / acondic. (US$/t)",1)}
         ${inputField("paritaria","Paritaria (US$/t)",.1)}
         ${inputField("comision","Comisión de venta / acopio (%)",.5)}
         ${inputField("otrosPct","Sellado y otros (%)",.5)}
+      </div>
+      <div class="cat" style="margin-top:14px">
+        <div class="cat-head"><b>Tarifa de flete largo · ${esc(store.zona)}</b><span>aplica a todos los cultivos de la zona</span></div>
+        <div class="grid2">
+          <label class="field">Fijo (US$/t)<input type="number" inputmode="decimal" step="0.5" data-kt="fijo" value="${Z().tarifa.fijo}"></label>
+          <label class="field">Por cada 100 km (US$/t)<input type="number" inputmode="decimal" step="0.5" data-kt="c100" value="${Z().tarifa.c100}"></label>
+        </div>
       </div>
     </div>
     <div class="sec">
@@ -502,6 +558,18 @@ function renderEditor(){
       }).join("")}
     </div>`;
   const root = $("inputs");
+  root.querySelectorAll("select[data-ks]").forEach(sel=>sel.addEventListener("change",()=>{
+    c.destino = sel.value;
+    c.fleteLargo = fleteCalc(store.zona,c,Z().tarifa);
+    const p = precioDest(store.sel,c.destino); if(p!=null) c.precio = p;
+    changed(); renderEditor();
+  }));
+  root.querySelectorAll("input[data-kt]").forEach(inp=>inp.addEventListener("change",()=>{
+    Z().tarifa[inp.dataset.kt] = inp.value===""?0:parseFloat(inp.value);
+    Object.values(Z().cultivos).forEach(cc=>{ cc.fleteLargo = fleteCalc(store.zona,cc,Z().tarifa); });
+    changed(); renderEditor(); toast("Fletes de "+store.zona+" recalculados");
+  }));
+  root.querySelectorAll("input[data-k=km]").forEach(inp=>inp.addEventListener("change",()=>{ c.fleteLargo = fleteCalc(store.zona,c,Z().tarifa); changed(); renderEditor(); }));
   root.querySelectorAll("input[data-kb]").forEach(inp=>inp.addEventListener("change",()=>{ c[inp.dataset.kb]=inp.checked; changed(); renderEditor(); }));
   root.querySelectorAll("input[data-k]").forEach(inp=>inp.addEventListener("input",()=>{ c[inp.dataset.k]=inp.value===""?0:parseFloat(inp.value); changed(); }));
   root.querySelectorAll("input[data-ci]").forEach(inp=>inp.addEventListener("input",()=>{
@@ -519,10 +587,12 @@ function renderEditor(){
 
 function refreshCatTotals(){
   const c = Z().cultivos[store.sel];
+  if(!c) return;
   $("inputs").querySelectorAll(".cat").forEach(el=>{
+    const numEl = el.querySelector(".cat-head .num"); if(!numEl) return;
     const cat = el.querySelector(".cat-head b").textContent;
     const sub = c.costos.filter(x=>x.cat===cat).reduce((a,x)=>a+n(x.usd),0);
-    el.querySelector(".cat-head .num").textContent = usd(sub);
+    numEl.textContent = usd(sub);
   });
 }
 
@@ -613,13 +683,13 @@ function renderComp(){
   const arr = Z().arrOn;
   const res = allResults().sort((a,b)=> arr ? b.MN-a.MN : b.r.MB-a.r.MB);
   $("comp").innerHTML = `<thead><tr>
-    <th class="pos">#</th><th>Cultivo</th><th>Rinde<br>qq/ha</th><th>Precio<br>US$/t</th><th>Ingreso<br>bruto</th><th>Comerc.<br>+ cosecha</th><th>Costos<br>directos</th><th>Margen<br>bruto</th><th>Rinde<br>indif. qq${arr?"<br>c/ alquiler":""}</th><th>Retorno<br>por US$</th>${arr?"<th>Margen luego<br>del alquiler</th>":""}
+    <th class="pos">#</th><th>Cultivo</th><th>Destino</th><th>Rinde<br>qq/ha</th><th>Precio<br>US$/t</th><th>Ingreso<br>bruto</th><th>Comerc.<br>+ cosecha</th><th>Costos<br>directos</th><th>Margen<br>bruto</th><th>Rinde<br>indif. qq${arr?"<br>c/ alquiler":""}</th><th>Retorno<br>por US$</th>${arr?"<th>Margen luego<br>del alquiler</th>":""}
   </tr></thead><tbody>${res.map((x,i)=>{
     const c = x.combo ? null : Z().cultivos[x.id];
     const rinde = x.combo ? x.parts.map(p=>fmt0.format(Z().cultivos[p].rinde)).join(" / ") : fmt0.format(c.rinde);
     const precio = x.combo ? x.parts.map(p=>fmt0.format(Z().cultivos[p].precio)).join(" / ") : fmt0.format(c.precio);
     const ri = x.combo ? x.rs.map(r=>isFinite(r.RI)?fmt1.format(r.RI):"—").join(" / ") : (isFinite(x.r.RI)?fmt1.format(x.r.RI):"—");
-    return `<tr class="${x.combo?"combo":""}${i===0?" top":""}"><td class="pos">${i+1}</td><td>${conEmo(x.id,x.nombre)}</td><td>${rinde}</td><td>${precio}</td><td>${num(x.r.IB)}</td><td>${num(x.r.GC+x.r.cos)}</td><td>${num(x.r.CD)}</td><td class="${x.r.MB<0?"neg":""}"><b>${num(x.r.MB)}</b></td><td>${ri}</td><td>${isFinite(x.r.ret)?pctF.format(x.r.ret):"—"}</td>${arr?`<td class="${x.MN<0?"neg":""}">${num(x.MN)}</td>`:""}</tr>`;
+    return `<tr class="${x.combo?"combo":""}${i===0?" top":""}"><td class="pos">${i+1}</td><td>${conEmo(x.id,x.nombre)}</td><td style="text-align:left">${x.combo ? x.parts.map(p=>esc(destNombre(Z().cultivos[p].destino).replace("Puerto ",""))).join(" / ") : esc(destNombre(Z().cultivos[x.id].destino).replace("Puerto ",""))}</td><td>${rinde}</td><td>${precio}</td><td>${num(x.r.IB)}</td><td>${num(x.r.GC+x.r.cos)}</td><td>${num(x.r.CD)}</td><td class="${x.r.MB<0?"neg":""}"><b>${num(x.r.MB)}</b></td><td>${ri}</td><td>${isFinite(x.r.ret)?pctF.format(x.r.ret):"—"}</td>${arr?`<td class="${x.MN<0?"neg":""}">${num(x.MN)}</td>`:""}</tr>`;
   }).join("")}</tbody>`;
 }
 
@@ -647,7 +717,7 @@ function resumen(){
   res.forEach(x=>{
     const c = x.combo?null:Z().cultivos[x.id];
     s += `${emo(x.id)} ${x.nombre}: ${usd(x.r.MB)}/ha`;
-    if(!x.combo) s += ` (${fmt0.format(c.rinde)} qq · US$ ${fmt0.format(c.precio)}/t · RI ${isFinite(x.r.RI)?fmt1.format(x.r.RI):"—"} qq)`;
+    if(!x.combo) s += ` (${fmt0.format(c.rinde)} qq · US$ ${fmt0.format(c.precio)}/t ${destNombre(c.destino).replace("Puerto ","")} · RI ${isFinite(x.r.RI)?fmt1.format(x.r.RI):"—"} qq)`;
     if(arr) s += ` → ${usd(x.MN)} con alquiler`;
     s += "\n";
   });
@@ -682,7 +752,11 @@ function cargarPrecios(){
   fetch("precios.json?t="+Date.now(),{cache:"no-store"}).then(r=>r.ok?r.json():null).then(j=>{
     if(!j || !j.fecha || !j.precios) return;
     const firma = JSON.stringify(j); if(firma===ultimoJson) return; ultimoJson = firma;
-    CROPS.forEach(c=>{ const p=j.precios[c.id]; if(p && isFinite(parseFloat(p.precio))){ PRECIO[c.id]=parseFloat(p.precio); if(p.posicion) c.ref=p.posicion; } });
+    CROPS.forEach(c=>{ const p=j.precios[c.id]; if(!p) return;
+      if(p.posicion) c.ref=p.posicion;
+      if(p.destinos && typeof p.destinos==="object"){ PRECIOS_DEST[c.id]={}; for(const d in p.destinos){ const v=parseFloat(p.destinos[d]); if(isFinite(v)) PRECIOS_DEST[c.id][d]=v; } }
+      else if(isFinite(parseFloat(p.precio))){ PRECIOS_DEST[c.id]=PRECIOS_DEST[c.id]||{}; PRECIOS_DEST[c.id].quequen=parseFloat(p.precio); }
+      const q=precioDest(c.id,"quequen"); if(q!=null) PRECIO[c.id]=q; });
     PRECIOS_FECHA = j.fecha; if(j.fuente) PRECIOS_FUENTE = j.fuente;
     const cambio = sincronizarPrecios();
     save(); renderAll();
