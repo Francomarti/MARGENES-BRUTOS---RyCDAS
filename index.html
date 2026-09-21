@@ -63,6 +63,7 @@ header.top .sub{margin-top:6px;max-width:60ch}
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .brand{background:#fff;padding:6px 10px}}
 :root[data-theme="dark"] .brand{background:#fff;padding:6px 10px}
 @media (max-width:820px){.brand img{height:38px}}
+.emo{font-style:normal}
 /* ranking */
 .ranking{margin:26px 0 8px}
 .ranking-head{display:flex;justify-content:space-between;align-items:baseline;gap:12px;flex-wrap:wrap;margin-bottom:10px}
@@ -320,6 +321,9 @@ function Z(){
   aplicarExtras(z.cultivos);
   return z;
 }
+const EMO = {maiz:"🌽", soja1:"🫘", soja2:"🌱", girasol:"🌻", trigo:"🌾", cebada:"🐄", cervecera:"🍺", arveja:"🫛"};
+const emo = id => { const cb = COMBOS.find(x=>x.id===id); return cb ? cb.parts.map(p=>EMO[p]).join("") : (EMO[id]||""); };
+const conEmo = (id,nombre) => `<span class="emo" aria-hidden="true">${emo(id)}</span> ${esc(nombre)}`;
 const isCombo = id => COMBOS.some(cb=>cb.id===id);
 function save(){ try{ localStorage.setItem(STORE_KEY, JSON.stringify(store)); }catch(e){} }
 
@@ -402,7 +406,7 @@ function renderRank(){
     const sub = x.combo ? "doble cultivo" : fmt0.format(Z().cultivos[x.id].rinde)+" qq · US$ "+fmt0.format(Z().cultivos[x.id].precio)+"/t";
     const target = x.id;
     return `<button class="row${i===0&&v>0?" best":""}${x.combo?" combo":""}" data-go="${target}">
-      <span class="name">${esc(x.nombre)}<small>${sub}</small></span>
+      <span class="name">${conEmo(x.id,x.nombre)}<small>${sub}</small></span>
       <span class="track">${hasNeg?`<span class="zero" style="left:${zeroPct}%"></span>`:""}<span class="fill${v<0?" neg":""}" style="left:${left}%;width:${Math.max(w,.5)}%"></span></span>
       <span class="val num ${v<0?"neg":""}">${num(v)}<small>${x.combo?"":"RI "+(isFinite(x.r.RI)?fmt1.format(x.r.RI)+" qq":"—")}</small></span>
     </button>`;
@@ -411,7 +415,7 @@ function renderRank(){
 }
 
 function renderTabs(){
-  $("tabs").innerHTML = CROPS.concat(COMBOS).map(c=>`<button class="tab${isCombo(c.id)?" tab-combo":""}" role="tab" aria-selected="${c.id===store.sel}" data-id="${c.id}">${c.nombre}</button>`).join("");
+  $("tabs").innerHTML = CROPS.concat(COMBOS).map(c=>`<button class="tab${isCombo(c.id)?" tab-combo":""}" role="tab" aria-selected="${c.id===store.sel}" data-id="${c.id}">${conEmo(c.id,c.nombre)}</button>`).join("");
   $("tabs").querySelectorAll(".tab").forEach(b=>b.onclick=()=>{ store.sel=b.dataset.id; save(); renderTabs(); renderEditor(); });
 }
 
@@ -513,7 +517,7 @@ function renderComboResults(){
   const MB = T("MB"), a = arrUSD(), tot = T("tot");
   const col = (lbl,k,neg) => `<tr${k==="MB"?' class="total"':""}><td>${lbl}</td>${rs.map(r=>`<td>${neg?"−"+num(r[k]):usd(r[k])}</td>`).join("")}<td><b>${neg?"−"+num(T(k)):usd(T(k))}</b></td></tr>`;
   $("results").innerHTML = `
-    <h3 style="margin-bottom:8px">${esc(cb.nombre)} · ${esc(store.zona)}${tenBadge()}</h3>
+    <h3 style="margin-bottom:8px">${conEmo(cb.id,cb.nombre)} · ${esc(store.zona)}${tenBadge()}</h3>
     <div class="result-big"><span class="v num ${MB<0?"neg":""}">${usd(MB)}</span><span class="u">margen bruto del doble cultivo por ha</span></div>
     <div class="scroll"><table class="lines combo-lines">
       <tr><td></td>${cb.parts.map(p=>`<td class="muted">${cropName(p)}</td>`).join("")}<td class="muted">Total</td></tr>
@@ -543,7 +547,7 @@ function renderResults(){
   }
   const rindes = [-.3,-.15,0,.15,.3], precios = [-.15,-.075,0,.075,.15];
   $("results").innerHTML = `
-    <h3 style="margin-bottom:8px">${cropName(store.sel)} · ${esc(store.zona)}${tenBadge()}</h3>
+    <h3 style="margin-bottom:8px">${conEmo(store.sel,cropName(store.sel))} · ${esc(store.zona)}${tenBadge()}</h3>
     <div class="result-big"><span class="v num ${r.MB<0?"neg":""}">${usd(r.MB)}</span><span class="u">margen bruto por ha</span></div>
     <table class="lines">
       ${Math.abs(r.pEf-n(c.precio))>0.01?`<tr class="sub"><td>Precio efectivo (con ${c.mg!=null?"bonificaciones":"mezcla maltera/forrajera"})</td><td>US$ ${fmt1.format(r.pEf)}/t</td></tr>`:""}
@@ -585,7 +589,7 @@ function renderComp(){
     const rinde = x.combo ? x.parts.map(p=>fmt0.format(Z().cultivos[p].rinde)).join(" / ") : fmt0.format(c.rinde);
     const precio = x.combo ? x.parts.map(p=>fmt0.format(Z().cultivos[p].precio)).join(" / ") : fmt0.format(c.precio);
     const ri = x.combo ? x.rs.map(r=>isFinite(r.RI)?fmt1.format(r.RI):"—").join(" / ") : (isFinite(x.r.RI)?fmt1.format(x.r.RI):"—");
-    return `<tr class="${x.combo?"combo":""}"><td>${esc(x.nombre)}</td><td>${rinde}</td><td>${precio}</td><td>${num(x.r.IB)}</td><td>${num(x.r.GC+x.r.cos)}</td><td>${num(x.r.CD)}</td><td class="${x.r.MB<0?"neg":""}"><b>${num(x.r.MB)}</b></td><td>${ri}</td><td>${isFinite(x.r.ret)?pctF.format(x.r.ret):"—"}</td>${arr?`<td class="${x.MN<0?"neg":""}">${num(x.MN)}</td>`:""}</tr>`;
+    return `<tr class="${x.combo?"combo":""}"><td>${conEmo(x.id,x.nombre)}</td><td>${rinde}</td><td>${precio}</td><td>${num(x.r.IB)}</td><td>${num(x.r.GC+x.r.cos)}</td><td>${num(x.r.CD)}</td><td class="${x.r.MB<0?"neg":""}"><b>${num(x.r.MB)}</b></td><td>${ri}</td><td>${isFinite(x.r.ret)?pctF.format(x.r.ret):"—"}</td>${arr?`<td class="${x.MN<0?"neg":""}">${num(x.MN)}</td>`:""}</tr>`;
   }).join("")}</tbody>`;
 }
 
@@ -612,7 +616,7 @@ function resumen(){
   let s = `*Márgenes brutos ${CAMPANA} · ${store.zona}*\nRindes y Cultivos DAS · precios al ${PRECIOS_FECHA}\n\n`;
   res.forEach(x=>{
     const c = x.combo?null:Z().cultivos[x.id];
-    s += `• ${x.nombre}: ${usd(x.r.MB)}/ha`;
+    s += `${emo(x.id)} ${x.nombre}: ${usd(x.r.MB)}/ha`;
     if(!x.combo) s += ` (${fmt0.format(c.rinde)} qq · US$ ${fmt0.format(c.precio)}/t · RI ${isFinite(x.r.RI)?fmt1.format(x.r.RI):"—"} qq)`;
     if(arr) s += ` → ${usd(x.MN)} con alquiler`;
     s += "\n";
