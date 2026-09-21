@@ -1,46 +1,85 @@
 {
   "fecha": "21/09/2026",
-  "fuente": "mesa de granos RyCDAS, Quequén",
+  "fuente": "mesa de granos RyCDAS, según destino",
   "precios": {
     "maiz": {
       "precio": 210,
       "posicion": "Abr/May-27",
-      "origen": "Ideas de precios SUR 09/09 - QQ abr/may"
+      "origen": "Ideas de precios SUR 09/09 - QQ abr/may",
+      "destinos": {
+        "quequen": 210,
+        "bahia": 210
+      }
     },
     "soja1": {
       "precio": 355,
       "posicion": "May-27",
-      "origen": "Bruno 17/09 - Soja QQ y BB Mayo"
+      "origen": "Bruno 17/09 - Soja QQ y BB Mayo",
+      "destinos": {
+        "quequen": 355,
+        "bahia": 355
+      }
     },
     "soja2": {
       "precio": 355,
       "posicion": "May-27",
-      "origen": "Igual a soja 1ra"
+      "origen": "Igual a soja 1ra",
+      "destinos": {
+        "quequen": 355,
+        "bahia": 355
+      }
     },
     "girasol": {
       "precio": 440,
       "posicion": "Mar-27 c/plus",
-      "origen": "Bruno 16/09 - Quequén cosecha 2027 400+40"
+      "origen": "Bruno 16/09 - Quequén cosecha 2027 400+40",
+      "destinos": {
+        "quequen": 440,
+        "bahia": 440,
+        "daireaux": 440,
+        "tresarroyos": 430,
+        "junin": 450,
+        "tandil": 420,
+        "sanmanuel": 420,
+        "smmonte": 420,
+        "madero": 420
+      }
     },
     "trigo": {
       "precio": 230,
       "posicion": "Dic/Ene-27",
-      "origen": "Bruno 17/09 - Trigo cosecha 2027 Quequén"
+      "origen": "Bruno 17/09 - Trigo cosecha 2027 Quequén",
+      "destinos": {
+        "quequen": 230,
+        "bahia": 230
+      }
     },
     "cebada": {
       "precio": 220,
       "posicion": "Dic/Ene-27",
-      "origen": "Bruno 18/09 - Forrajera Bahía y Neco"
+      "origen": "Bruno 18/09 - Forrajera Bahía y Neco",
+      "destinos": {
+        "quequen": 220,
+        "bahia": 220
+      }
     },
     "arveja": {
       "precio": 280,
       "posicion": "Dic/Ene-27",
-      "origen": "Valor de referencia, a confirmar con la mesa de granos"
+      "origen": "Valor de referencia, a confirmar con la mesa de granos",
+      "destinos": {
+        "quequen": 280
+      }
     },
     "cervecera": {
       "precio": 245,
       "posicion": "Ene/Mar-27",
-      "origen": "Bruno 18/09 - Cervecera Quequén ene/mar 245 (base forrajera 210)"
+      "origen": "Bruno 18/09 - Cervecera Quequén ene/mar 245 (base forrajera 210)",
+      "destinos": {
+        "quequen": 245,
+        "bahia": 240,
+        "rosario": 235
+      }
     }
   }
 }
