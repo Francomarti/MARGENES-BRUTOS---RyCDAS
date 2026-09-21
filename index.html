@@ -494,7 +494,7 @@ function renderAll(){ renderHeader(); renderRank(); renderTabs(); renderEditor()
 
 // ---------- controles ----------
 $("zona").onchange = e=>{ store.zona=e.target.value; save(); renderAll(); };
-$("arrQQ").oninput = e=>{ Z().arrQQ = e.target.value===""?0:parseFloat(e.target.value); save(); renderRank(); renderComp(); renderResults(); };
+$("arrQQ").oninput = e=>{ Z().arrQQ = e.target.value===""?0:parseFloat(e.target.value); if(!Z().arrOn){ Z().arrOn=true; $("arrOn").checked=true; toast("Arrendamiento activado"); } save(); renderRank(); renderComp(); renderResults(); };
 $("arrOn").onchange = e=>{ Z().arrOn = e.target.checked; save(); renderRank(); renderComp(); renderResults(); };
 
 function toast(msg){ const el=$("toast"); el.textContent=msg; el.classList.add("show"); clearTimeout(t); t=setTimeout(()=>el.classList.remove("show"),2200); }
