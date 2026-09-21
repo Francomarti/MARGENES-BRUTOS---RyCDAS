@@ -31,6 +31,11 @@
       "precio": 220,
       "posicion": "Dic/Ene-27",
       "origen": "Bruno 18/09 - Forrajera Bahía y Neco"
+    },
+    "arveja": {
+      "precio": 280,
+      "posicion": "Dic/Ene-27",
+      "origen": "Valor de referencia, a confirmar con la mesa de granos"
     }
   }
 }
