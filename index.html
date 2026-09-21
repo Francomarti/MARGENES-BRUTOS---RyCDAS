@@ -229,28 +229,30 @@ const CROPS = [
   {id:"girasol", nombre:"Girasol",  ref:"Mar-27 c/plus"},
   {id:"trigo",   nombre:"Trigo",    ref:"Dic/Ene-27"},
   {id:"cebada",  nombre:"Cebada forrajera", ref:"Dic/Ene-27"},
+  {id:"cervecera", nombre:"Cebada cervecera", ref:"Ene/Mar-27"},
   {id:"arveja",  nombre:"Arveja",   ref:"Dic/Ene-27"}
 ];
 const COMBOS = [
   {id:"trigo_soja2",  nombre:"Trigo / Soja 2da",  parts:["trigo","soja2"]},
-  {id:"cebada_soja2", nombre:"Cebada / Soja 2da", parts:["cebada","soja2"]}
+  {id:"cebada_soja2", nombre:"Cebada forrajera / Soja 2da", parts:["cebada","soja2"]},
+  {id:"cervecera_soja2", nombre:"Cebada cervecera / Soja 2da", parts:["cervecera","soja2"]}
 ];
 const CATS = ["Semilla","Fertilización","Protección","Labores","Otros"];
 
 // Rinde (qq/ha), flete largo (USD/t) y arrendamiento (qq soja/ha) por zona
 const ZONAS = {
-  "Tandil":        {flete:18, arr:11, rinde:{maiz:85,soja1:32,soja2:18,girasol:26,trigo:55,cebada:55,arveja:30}},
-  "Azul":          {flete:24, arr:10, rinde:{maiz:80,soja1:30,soja2:17,girasol:24,trigo:48,cebada:50,arveja:28}},
-  "Olavarría":     {flete:26, arr:9,  rinde:{maiz:75,soja1:28,soja2:16,girasol:24,trigo:45,cebada:48,arveja:26}},
-  "Bolívar":       {flete:30, arr:11, rinde:{maiz:85,soja1:33,soja2:20,girasol:25,trigo:42,cebada:45,arveja:25}},
-  "Gral. Belgrano":{flete:30, arr:10, rinde:{maiz:80,soja1:30,soja2:18,girasol:23,trigo:40,cebada:42,arveja:25}}
+  "Tandil":        {flete:18, arr:11, rinde:{maiz:85,soja1:32,soja2:18,girasol:26,trigo:55,cebada:55,cervecera:55,arveja:30}},
+  "Azul":          {flete:24, arr:10, rinde:{maiz:80,soja1:30,soja2:17,girasol:24,trigo:48,cebada:50,cervecera:50,arveja:28}},
+  "Olavarría":     {flete:26, arr:9,  rinde:{maiz:75,soja1:28,soja2:16,girasol:24,trigo:45,cebada:48,cervecera:48,arveja:26}},
+  "Bolívar":       {flete:30, arr:11, rinde:{maiz:85,soja1:33,soja2:20,girasol:25,trigo:42,cebada:45,cervecera:45,arveja:25}},
+  "Gral. Belgrano":{flete:30, arr:10, rinde:{maiz:80,soja1:30,soja2:18,girasol:23,trigo:40,cebada:42,cervecera:42,arveja:25}}
 };
 
 // Precio de referencia a cosecha USD/t (editar con el Matba-Rofex del día)
-const PRECIO = {maiz:210, soja1:355, soja2:355, girasol:440, trigo:230, cebada:220, arveja:280};
+const PRECIO = {maiz:210, soja1:355, soja2:355, girasol:440, trigo:230, cebada:220, cervecera:245, arveja:280};
 let PRECIOS_FECHA = "21/09/2026";
 let PRECIOS_FUENTE = "mesa de granos RyCDAS, Quequén";
-const SECADA = {maiz:10, soja1:0, soja2:0, girasol:3, trigo:0, cebada:0, arveja:0};
+const SECADA = {maiz:10, soja1:0, soja2:0, girasol:3, trigo:0, cebada:0, cervecera:0, arveja:0};
 
 const COSTOS = {
   maiz:[["Semilla","Híbrido (1 bolsa/ha)",190],["Fertilización","Urea 200 kg",120],["Fertilización","MAP 100 kg",80],["Protección","Herbicidas",70],["Protección","Insecticida / fungicida",25],["Labores","Siembra",60],["Labores","Pulverizaciones (3)",30],["Labores","Fertilizaciones (2)",24],["Otros","Seguro",15]],
@@ -259,6 +261,7 @@ const COSTOS = {
   girasol:[["Semilla","Híbrido 55.000 sem/ha",95],["Fertilización","MAP 100 kg",80],["Fertilización","Urea 80 kg",48],["Protección","Herbicidas",70],["Protección","Insecticida / fungicida",25],["Labores","Siembra",60],["Labores","Pulverizaciones (3)",30],["Labores","Fertilización",12],["Otros","Seguro",12]],
   trigo:[["Semilla","Semilla 130 kg",65],["Semilla","Curasemilla",10],["Fertilización","Urea 200 kg",120],["Fertilización","MAP 100 kg",80],["Protección","Herbicidas",45],["Protección","Fungicida",45],["Labores","Siembra",60],["Labores","Pulverizaciones (3)",30],["Labores","Fertilizaciones (2)",24],["Otros","Seguro",15]],
   arveja:[["Semilla","Semilla 200 kg",90],["Semilla","Inoculante + curasemilla",12],["Fertilización","Fosforado",40],["Protección","Herbicidas",50],["Protección","Insecticida / fungicida",35],["Labores","Siembra",60],["Labores","Pulverizaciones (3)",30],["Otros","Seguro",10]],
+  cervecera:[["Semilla","Semilla fiscalizada 120 kg",66],["Semilla","Curasemilla",10],["Fertilización","Urea 180 kg",108],["Fertilización","MAP 90 kg",72],["Protección","Herbicidas",45],["Protección","Fungicidas (2)",55],["Labores","Siembra",60],["Labores","Pulverizaciones (3)",30],["Labores","Fertilizaciones (2)",24],["Otros","Seguro",15]],
   cebada:[["Semilla","Semilla 120 kg",54],["Semilla","Curasemilla",10],["Fertilización","Urea 180 kg",108],["Fertilización","MAP 90 kg",72],["Protección","Herbicidas",45],["Protección","Fungicida",40],["Labores","Siembra",60],["Labores","Pulverizaciones (3)",30],["Labores","Fertilizaciones (2)",24],["Otros","Seguro",15]]
 };
 
@@ -267,7 +270,7 @@ function defaultZona(z){
   CROPS.forEach(cr=>{
     c[cr.id] = {
       rinde:Z.rinde[cr.id], precio:PRECIO[cr.id],
-      fleteCorto:8, fleteLargo:Z.flete, secada:SECADA[cr.id], paritaria:0,
+      fleteCorto:8, fleteLargo:Z.flete, secada:SECADA[cr.id], paritaria:4,
       comision:2, otrosPct:1, cosechaPct:8,
       costos:COSTOS[cr.id].map(([cat,item,usd])=>({cat,item,usd}))
     };
@@ -298,6 +301,10 @@ function sincronizarPrecios(){
   return habia;
 }
 let preciosActualizados = sincronizarPrecios();
+if(!store.paritariaV){
+  Object.values(store.zonas).forEach(z=>{ if(z && z.cultivos) Object.values(z.cultivos).forEach(c=>{ if(!c.paritaria) c.paritaria = 4; }); });
+  store.paritariaV = 1;
+}
 function Z(){
   if(!store.zonas[store.zona]) store.zonas[store.zona] = defaultZona(store.zona);
   const z = store.zonas[store.zona];
