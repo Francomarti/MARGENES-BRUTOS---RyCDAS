@@ -303,9 +303,9 @@ const ZONAS = {
 };
 
 // Precio de referencia a cosecha USD/t (editar con el Matba-Rofex del día)
-const PRECIO = {maiz:210, soja1:355, soja2:355, girasol:440, trigo:230, cebada:220, cervecera:245, arveja:280};
+const PRECIO = {maiz:205, soja1:355, soja2:355, girasol:440, trigo:230, cebada:220, cervecera:245, arveja:280};
 const PRECIOS_DEST = {
-  maiz:{quequen:210, bahia:210},
+  maiz:{quequen:205, bahia:205},
   soja1:{quequen:355, bahia:355},
   soja2:{quequen:355, bahia:355},
   girasol:{quequen:440, bahia:440, daireaux:440, tresarroyos:430, junin:450, tandil:420, sanmanuel:420, smmonte:420, madero:420},
@@ -328,7 +328,7 @@ function notaPrecio(id,c){
   if(e.tipo==="manual") return `Precio cargado a mano para ${dn}${e.mesa!=null?` (la mesa informó US$ ${fmt0.format(e.mesa)}/t)`:""}.`;
   return `<b style="color:var(--accent-ink)">⚠ La mesa no informó precio de ${esc(cropName(id).toLowerCase())} para ${dn}: cargá el precio de ese destino.</b>`;
 }
-let PRECIOS_FECHA = "21/09/2026";
+let PRECIOS_FECHA = "22/09/2026";
 let PRECIOS_FUENTE = "mesa de granos RyCDAS, según destino";
 const SECADA = {maiz:10, soja1:0, soja2:0, girasol:3, trigo:0, cebada:0, cervecera:0, arveja:0};
 
