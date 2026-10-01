@@ -258,7 +258,7 @@ const COMBOS = [
   {id:"arveja_maiz2", nombre:"Arveja / Maíz 2da", parts:["arveja","maiz2"]}
 ];
 // cultivos que solo se muestran en el ranking dentro de un doble cultivo
-const SOLO_EN_COMBO = ["soja2","maiz2","arveja"];
+const SOLO_EN_COMBO = ["soja2","maiz2"];
 const CATS = ["Semilla","Fertilización","Protección","Labores","Otros"];
 
 // Rinde (qq/ha), flete largo (USD/t) y arrendamiento (qq soja/ha) por zona
@@ -678,9 +678,9 @@ function renderResults(){
   const a = arrUSD();
   const combo = COMBOS.find(cb=>cb.parts.includes(store.sel));
   let comboHtml = "";
-  if(SOLO_EN_COMBO.includes(store.sel)){
+  if(SOLO_EN_COMBO.includes(store.sel) || store.sel==="arveja"){
     const nombres = COMBOS.filter(cb=>cb.parts.includes(store.sel)).map(cb=>cb.nombre).join(", ");
-    comboHtml = `<p class="muted" style="font-size:13px;margin-top:10px">${esc(cropName(store.sel))} se muestra en el ranking solo dentro de un doble cultivo: mirá las pestañas ${esc(nombres)}.</p>`;
+    comboHtml = `<p class="muted" style="font-size:13px;margin-top:10px">${SOLO_EN_COMBO.includes(store.sel) ? esc(cropName(store.sel))+" se muestra en el ranking solo dentro de un doble cultivo" : "Este es el número aislado de la arveja; en el ranking también figura asociada a soja 2da y maíz 2da"}: mirá las pestañas ${esc(nombres)}.</p>`;
   }
   const rindes = [-.3,-.15,0,.15,.3], precios = [-.15,-.075,0,.075,.15];
   $("results").innerHTML = `
