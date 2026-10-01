@@ -243,6 +243,7 @@ const CROPS = [
   {id:"maiz",    nombre:"Maíz",     ref:"Abr/May-27"},
   {id:"soja1",   nombre:"Soja 1ra", ref:"May-27"},
   {id:"soja2",   nombre:"Soja 2da", ref:"May-27"},
+  {id:"maiz2",   nombre:"Maíz 2da", ref:"Abr/May-27"},
   {id:"girasol", nombre:"Girasol",  ref:"Mar-27 c/plus"},
   {id:"trigo",   nombre:"Trigo",    ref:"Dic/Ene-27"},
   {id:"cebada",  nombre:"Cebada forrajera", ref:"Dic/Ene-27"},
@@ -252,8 +253,12 @@ const CROPS = [
 const COMBOS = [
   {id:"trigo_soja2",  nombre:"Trigo / Soja 2da",  parts:["trigo","soja2"]},
   {id:"cebada_soja2", nombre:"Cebada forrajera / Soja 2da", parts:["cebada","soja2"]},
-  {id:"cervecera_soja2", nombre:"Cebada cervecera / Soja 2da", parts:["cervecera","soja2"]}
+  {id:"cervecera_soja2", nombre:"Cebada cervecera / Soja 2da", parts:["cervecera","soja2"]},
+  {id:"arveja_soja2", nombre:"Arveja / Soja 2da", parts:["arveja","soja2"]},
+  {id:"arveja_maiz2", nombre:"Arveja / Maíz 2da", parts:["arveja","maiz2"]}
 ];
+// cultivos que solo se muestran en el ranking dentro de un doble cultivo
+const SOLO_EN_COMBO = ["soja2","maiz2","arveja"];
 const CATS = ["Semilla","Fertilización","Protección","Labores","Otros"];
 
 // Rinde (qq/ha), flete largo (USD/t) y arrendamiento (qq soja/ha) por zona
@@ -295,17 +300,18 @@ const TARIFA_DEF = {fijo:4, c100:8};
 function kmDestino(zona,c){ return c.destino==="otro" ? n(c.km) : ((KM[zona]||{})[c.destino||"quequen"] ?? 0); }
 function fleteCalc(zona,c,tarifa){ const km=kmDestino(zona,c); const t=tarifa||TARIFA_DEF; return km<=0 ? 0 : Math.round((n(t.fijo)+n(t.c100)*km/100)*2)/2; }
 const ZONAS = {
-  "Tandil":        {flete:18, arr:11, rinde:{maiz:85,soja1:32,soja2:18,girasol:26,trigo:55,cebada:55,cervecera:55,arveja:30}},
-  "Azul":          {flete:24, arr:10, rinde:{maiz:80,soja1:30,soja2:17,girasol:24,trigo:48,cebada:50,cervecera:50,arveja:28}},
-  "Olavarría":     {flete:26, arr:9,  rinde:{maiz:75,soja1:28,soja2:16,girasol:24,trigo:45,cebada:48,cervecera:48,arveja:26}},
-  "Bolívar":       {flete:30, arr:11, rinde:{maiz:85,soja1:33,soja2:20,girasol:25,trigo:42,cebada:45,cervecera:45,arveja:25}},
-  "Gral. Belgrano":{flete:30, arr:10, rinde:{maiz:80,soja1:30,soja2:18,girasol:23,trigo:40,cebada:42,cervecera:42,arveja:25}}
+  "Tandil":        {flete:18, arr:11, rinde:{maiz:85,soja1:32,soja2:18,maiz2:60,girasol:26,trigo:55,cebada:55,cervecera:55,arveja:30}},
+  "Azul":          {flete:24, arr:10, rinde:{maiz:80,soja1:30,soja2:17,maiz2:56,girasol:24,trigo:48,cebada:50,cervecera:50,arveja:28}},
+  "Olavarría":     {flete:26, arr:9,  rinde:{maiz:75,soja1:28,soja2:16,maiz2:52,girasol:24,trigo:45,cebada:48,cervecera:48,arveja:26}},
+  "Bolívar":       {flete:30, arr:11, rinde:{maiz:85,soja1:33,soja2:20,maiz2:58,girasol:25,trigo:42,cebada:45,cervecera:45,arveja:25}},
+  "Gral. Belgrano":{flete:30, arr:10, rinde:{maiz:80,soja1:30,soja2:18,maiz2:55,girasol:23,trigo:40,cebada:42,cervecera:42,arveja:25}}
 };
 
 // Precio de referencia a cosecha USD/t (editar con el Matba-Rofex del día)
-const PRECIO = {maiz:205, soja1:355, soja2:355, girasol:440, trigo:230, cebada:220, cervecera:245, arveja:280};
+const PRECIO = {maiz:205, maiz2:205, soja1:355, soja2:355, girasol:440, trigo:230, cebada:220, cervecera:245, arveja:280};
 const PRECIOS_DEST = {
   maiz:{quequen:205, bahia:205},
+  maiz2:{quequen:205, bahia:205},
   soja1:{quequen:355, bahia:355},
   soja2:{quequen:355, bahia:355},
   girasol:{quequen:440, bahia:440, daireaux:440, tresarroyos:430, junin:450, tandil:420, sanmanuel:420, smmonte:420, madero:420},
@@ -330,10 +336,11 @@ function notaPrecio(id,c){
 }
 let PRECIOS_FECHA = "22/09/2026";
 let PRECIOS_FUENTE = "mesa de granos RyCDAS, según destino";
-const SECADA = {maiz:10, soja1:0, soja2:0, girasol:3, trigo:0, cebada:0, cervecera:0, arveja:0};
+const SECADA = {maiz:10, maiz2:10, soja1:0, soja2:0, girasol:3, trigo:0, cebada:0, cervecera:0, arveja:0};
 
 const COSTOS = {
   maiz:[["Semilla","Híbrido (1 bolsa/ha)",190],["Fertilización","Urea 200 kg",120],["Fertilización","MAP 100 kg",80],["Protección","Herbicidas",70],["Protección","Insecticida / fungicida",25],["Labores","Siembra",60],["Labores","Pulverizaciones (3)",30],["Labores","Fertilizaciones (2)",24],["Otros","Seguro",15]],
+  maiz2:[["Semilla","Híbrido (menor densidad)",160],["Fertilización","Urea 150 kg",90],["Fertilización","MAP 80 kg",64],["Protección","Herbicidas",60],["Protección","Insecticida / fungicida",25],["Labores","Siembra",60],["Labores","Pulverizaciones (3)",30],["Labores","Fertilizaciones (2)",24],["Otros","Seguro",12]],
   soja1:[["Semilla","Semilla 80 kg",72],["Semilla","Inoculante + curasemilla",12],["Fertilización","Fosforado",40],["Fertilización","Boro foliar",8],["Protección","Herbicidas",80],["Protección","Insecticida / fungicida",35],["Labores","Siembra",60],["Labores","Pulverizaciones (4)",40],["Otros","Seguro",10]],
   soja2:[["Semilla","Semilla 90 kg",81],["Semilla","Inoculante + curasemilla",10],["Protección","Herbicidas",50],["Protección","Insecticida / fungicida",25],["Labores","Siembra",60],["Labores","Pulverizaciones (3)",30],["Otros","Seguro",8]],
   girasol:[["Semilla","Híbrido 55.000 sem/ha",95],["Fertilización","MAP 70 kg",56],["Fertilización","Urea 50 kg",30],["Fertilización","Boro foliar",12],["Protección","Herbicidas",70],["Protección","Insecticida / fungicida",25],["Labores","Siembra",60],["Labores","Pulverizaciones (3)",30],["Labores","Fertilización",12],["Otros","Seguro",12]],
@@ -415,10 +422,10 @@ function Z(){
   Object.values(z.cultivos).forEach(c=>{ if(!c.destino) c.destino="quequen"; });
   return z;
 }
-const EMO = {maiz:"🌽", soja1:"🌱", soja2:"🌱", girasol:"🌻", trigo:"🥖", cebada:"🌾", cervecera:"🍺", arveja:"🟢"};
+const EMO = {maiz:"🌽", maiz2:"🌽", soja1:"🌱", soja2:"🌱", girasol:"🌻", trigo:"🥖", cebada:"🌾", cervecera:"🍺", arveja:"🟢"};
 const emo = id => { const cb = COMBOS.find(x=>x.id===id); return cb ? cb.parts.map(p=>EMO[p]).join("") : (EMO[id]||""); };
 const CHAUCHA = '<svg class="ico" viewBox="0 0 32 32" aria-hidden="true"><path d="M4 22C9 9 22 4 29 5c-2 7-8 19-22 21-2 .3-3.5-2-3-4z" fill="#5FA83A"/><path d="M4 22C9 9 22 4 29 5" fill="none" stroke="#3E7B25" stroke-width="1.6" stroke-linecap="round"/><circle cx="11" cy="18.5" r="3.2" fill="#9BD66B"/><circle cx="17" cy="14" r="3.2" fill="#9BD66B"/><circle cx="22.5" cy="10" r="2.8" fill="#9BD66B"/></svg>';
-const emoHtml = id => id==="arveja" ? CHAUCHA : emo(id);
+const emoHtml = id => { const cb = COMBOS.find(x=>x.id===id); if(cb) return cb.parts.map(p=>p==="arveja"?CHAUCHA:EMO[p]).join(""); return id==="arveja" ? CHAUCHA : emo(id); };
 const conEmo = (id,nombre) => `<span class="emo" aria-hidden="true">${emoHtml(id)}</span> ${esc(nombre)}`;
 const isCombo = id => COMBOS.some(cb=>cb.id===id);
 function save(){ try{ localStorage.setItem(STORE_KEY, JSON.stringify(store)); }catch(e){} }
@@ -449,7 +456,7 @@ function tenBadge(){ return Z().arrOn ? `<span class="badge">Campo alquilado · 
 function arrUSD(){ const z=Z(); return z.arrOn ? n(z.arrQQ)/10*n(z.cultivos.soja1.precio) : 0; }
 function allResults(){
   const z = Z(), out = [];
-  CROPS.forEach(cr=>{ if(cr.id==="soja2") return; const r = calc(z.cultivos[cr.id]); out.push({id:cr.id,nombre:cr.nombre,combo:false,r,MN:r.MB-arrUSD()}); });
+  CROPS.forEach(cr=>{ if(SOLO_EN_COMBO.includes(cr.id)) return; const r = calc(z.cultivos[cr.id]); out.push({id:cr.id,nombre:cr.nombre,combo:false,r,MN:r.MB-arrUSD()}); });
   COMBOS.forEach(cb=>{
     const rs = cb.parts.map((p,i)=>calc(z.cultivos[p],null,{sinAlq:i>0}));
     const r = {IB:0,GC:0,cos:0,IN:0,CD:0,MB:0,tot:0};
@@ -671,8 +678,9 @@ function renderResults(){
   const a = arrUSD();
   const combo = COMBOS.find(cb=>cb.parts.includes(store.sel));
   let comboHtml = "";
-  if(combo && store.sel==="soja2"){
-    comboHtml = `<p class="muted" style="font-size:13px;margin-top:10px">La soja 2da se muestra en el ranking sumada a su cultivo de invierno: mirá las pestañas Trigo / Soja 2da y Cebada / Soja 2da.</p>`;
+  if(SOLO_EN_COMBO.includes(store.sel)){
+    const nombres = COMBOS.filter(cb=>cb.parts.includes(store.sel)).map(cb=>cb.nombre).join(", ");
+    comboHtml = `<p class="muted" style="font-size:13px;margin-top:10px">${esc(cropName(store.sel))} se muestra en el ranking solo dentro de un doble cultivo: mirá las pestañas ${esc(nombres)}.</p>`;
   }
   const rindes = [-.3,-.15,0,.15,.3], precios = [-.15,-.075,0,.075,.15];
   $("results").innerHTML = `
@@ -782,13 +790,14 @@ function cargarPrecios(){
   fetch("precios.json?t="+Date.now(),{cache:"no-store"}).then(r=>r.ok?r.json():null).then(j=>{
     if(!j || !j.fecha || !j.precios) return;
     const firma = JSON.stringify(j); if(firma===ultimoJson) return; ultimoJson = firma;
-    CROPS.forEach(c=>{ const p=j.precios[c.id]; if(!p) return;
+    CROPS.forEach(c=>{ const p=j.precios[c.id] || (c.id==="maiz2" ? j.precios.maiz : null); if(!p) return;
       if(p.posicion) c.ref=p.posicion;
       if(p.destinos && typeof p.destinos==="object"){ PRECIOS_DEST[c.id]={}; for(const d in p.destinos){ const v=parseFloat(p.destinos[d]); if(isFinite(v)) PRECIOS_DEST[c.id][d]=v; } }
       else if(isFinite(parseFloat(p.precio))){ PRECIOS_DEST[c.id]=PRECIOS_DEST[c.id]||{}; PRECIOS_DEST[c.id].quequen=parseFloat(p.precio); }
       const q=precioDest(c.id,"quequen"); if(q!=null) PRECIO[c.id]=q; });
     PRECIOS_FECHA = j.fecha; if(j.fuente) PRECIOS_FUENTE = j.fuente;
     const cambio = sincronizarPrecios();
+    Object.values(store.zonas).forEach(z=>{ const cc=z && z.cultivos && z.cultivos.maiz2; if(!cc) return; const d=cc.destino||"quequen"; if((cc.preciosMan||{})[d]!=null) return; const pm=precioDest("maiz2",d); if(pm!=null) cc.precio=pm; });
     save(); renderAll();
     if(cambio) toast("Precios actualizados al "+PRECIOS_FECHA);
   }).catch(()=>{});
