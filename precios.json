@@ -1,11 +1,11 @@
 {
-  "fecha": "26/10/2026",
+  "fecha": "02/11/2026",
   "fuente": "mesa de granos RyCDAS, según destino",
   "precios": {
     "maiz": {
       "precio": 188,
       "posicion": "Jul-27",
-      "origen": "Zeni/Bruno 14-15/10 - Maíz QQ jun/jul/ago 188 (mar/abr 192-193, mayo 190); BB sin cotización, se toma QQ",
+      "origen": "Zeni/Bruno 14-15/10 - Maíz QQ jun/jul/ago 188 (mar/abr 192-193, mayo 190); sin cotización nueva al 02/11; BB sin cotización, se toma QQ",
       "destinos": {
         "quequen": 188,
         "bahia": 188
@@ -14,7 +14,7 @@
     "soja1": {
       "precio": 350,
       "posicion": "May-27",
-      "origen": "Bruno 20/10 y 22/10 - Soja BB y QQ mayo 350",
+      "origen": "Bruno 20/10 y 22/10 - Soja BB y QQ mayo 350 (sin cotización mayo nueva; 02/11 QQ contractual 340)",
       "destinos": {
         "quequen": 350,
         "bahia": 350
@@ -32,35 +32,35 @@
     "girasol": {
       "precio": 460,
       "posicion": "Mar-27 c/plus",
-      "origen": "26/10 cosecha 2027 - QQ/BB 430+30, Daireaux 430+20, Tres Arroyos 430+20, Junín 460/470; plantas 22/10 (Tandil y San Manuel 430+20, SM Monte 430+15, F. Madero y H. Lagos 430+10)",
+      "origen": "26/10 cosecha 2027 - QQ/BB 430+30, Daireaux 430+20, Tres Arroyos 430+20, Junín 460/470; plantas 30/10 (Tandil, San Manuel y SM Monte 430+10, H. Lagos y Guaminí 430, F. Madero 420, Victoria 455 enero)",
       "destinos": {
         "quequen": 460,
         "bahia": 460,
         "daireaux": 450,
         "tresarroyos": 450,
         "junin": 460,
-        "tandil": 450,
-        "sanmanuel": 450,
-        "smmonte": 445,
-        "madero": 440
+        "tandil": 440,
+        "sanmanuel": 440,
+        "smmonte": 440,
+        "madero": 420
       }
     },
     "trigo": {
-      "precio": 225,
+      "precio": 210,
       "posicion": "Dic/Ene-27",
-      "origen": "Bruno 26/10 - Trigo cosecha 2027 Quequén dic 225, ene 225, mar 230; Bahía 240 entrega diciembre (19/10)",
+      "origen": "Bruno 30/10 y 02/11 - Trigo cosecha 2027 Quequén dic 210, ene 210, mar 215; Bahía 28/10 ene 212, feb 215, mar 217",
       "destinos": {
-        "quequen": 225,
-        "bahia": 240
+        "quequen": 210,
+        "bahia": 212
       }
     },
     "cebada": {
-      "precio": 210,
-      "posicion": "Dic/Ene-27",
-      "origen": "Bruno 26/10 - Forrajera cosecha 2027 Bahía y Quequén, entrega 15/12 al 31/01 210",
+      "precio": 200,
+      "posicion": "Ene/Mar-27",
+      "origen": "Bruno 30/10 y 02/11 - Forrajera QQ ene/feb/mar 200; Bahía y Quequén 28/10 entrega 15/12 al 31/01 205",
       "destinos": {
-        "quequen": 210,
-        "bahia": 210
+        "quequen": 200,
+        "bahia": 205
       }
     },
     "arveja": {
